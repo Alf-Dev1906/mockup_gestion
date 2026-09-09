@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Auth Flow</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        h1 { color: #00ffff; }
+        .box {
+            background: #2a2a2a;
+            border: 2px solid #00ff00;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .error { border-color: #ff0000; color: #ff0000; }
+        .success { border-color: #00ff00; color: #00ff00; }
+        .info { border-color: #ffff00; color: #ffff00; }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 3px;
+        }
+        button:hover { background: #00cc00; }
+        input, select {
+            background: #000;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 8px;
+            margin: 5px 0;
+            width: 100%;
+            font-family: inherit;
+        }
+        pre {
+            background: #000;
+            padding: 10px;
+            overflow-x: auto;
+            border-left: 3px solid #00ff00;
+        }
+        .step { margin: 20px 0; }
+        .step-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #00ffff;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test de Flujo de Autenticación</h1>
+    <p>Este script simula exactamente lo que hace el frontend Vue + Axios</p>
+
+    <div class="step">
+        <div class="step-title">PASO 1: Selecciona el usuario</div>
+        <div class="box">
+            <select id="userSelect">
+                <option value="developer@universidad.edu.ve|Dev2026!">Desarrollador (developer@universidad.edu.ve)</option>
+                <option value="soporte@universidad.edu.ve|Soporte2026!">Soporte IT (soporte@universidad.edu.ve)</option>
+                <option value="admin@universidad.edu.ve|Admin2026!">Administrativo (admin@universidad.edu.ve)</option>
+                <option value="profesor@universidad.edu.ve|Profesor2026!">Profesor (profesor@universidad.edu.ve)</option>
+                <option value="estudiante@universidad.edu.ve|Estudiante2026!">Estudiante (estudiante@universidad.edu.ve)</option>
+                <option value="solicitante@universidad.edu.ve|Solicitante2026!">Solicitante (solicitante@universidad.edu.ve)</option>
+            </select>
+            <button onclick="testLogin()">🚀 INICIAR TEST DE LOGIN</button>
+            <button onclick="clearAll()">🗑️ Limpiar Todo</button>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-title">PASO 2: Login (POST /api/login)</div>
+        <div id="loginResult" class="box info">Esperando...</div>
+    </div>
+
+    <div class="step">
+        <div class="step-title">PASO 3: Fetch User (GET /api/me)</div>
+        <div id="meResult" class="box info">Esperando...</div>
+    </div>
+
+    <div class="step">
+        <div class="step-title">PASO 4: Test Dashboard Endpoint</div>
+        <div id="dashboardResult" class="box info">Esperando...</div>
+    </div>
+
+    <div class="step">
+        <div class="step-title">📊 Resumen</div>
+        <div id="summary" class="box info">Esperando inicio de prueba...</div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let token = null;
+        let user = null;
+
+        function log(elementId, message, type = 'info') {
+            const el = document.getElementById(elementId);
+            el.className = `box ${type}`;
+            el.innerHTML = `<pre>${message}</pre>`;
+        }
+
+        function clearAll() {
+            localStorage.clear();
+            token = null;
+            user = null;
+            log('loginResult', 'Esperando...', 'info');
+            log('meResult', 'Esperando...', 'info');
+            log('dashboardResult', 'Esperando...', 'info');
+            log('summary', 'LocalStorage limpiado. Prueba de nuevo.', 'info');
+        }
+
+        async function testLogin() {
+            const select = document.getElementById('userSelect');
+            const [email, password] = select.value.split('|');
+
+            log('summary', '⏳ Ejecutando prueba...', 'info');
+
+            try {
+                // PASO 1: LOGIN
+                log('loginResult', '⏳ Enviando credenciales...', 'info');
+                const loginResponse = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const loginData = await loginResponse.json();
+
+                if (!loginResponse.ok) {
+                    log('loginResult', 
+                        `❌ LOGIN FALLÓ (${loginResponse.status})\n\n` +
+                        JSON.stringify(loginData, null, 2), 
+                        'error'
+                    );
+                    log('summary', '❌ LOGIN FALLÓ - Ver detalles arriba', 'error');
+                    return;
+                }
+
+                token = loginData.token;
+                user = loginData.user;
+
+                log('loginResult', 
+                    `✅ LOGIN EXITOSO (200)\n\n` +
+                    `Token: ${token.substring(0, 30)}...\n` +
+                    `User: ${JSON.stringify(user, null, 2)}\n` +
+                    `Expires in: ${loginData.expires_in} minutos`, 
+                    'success'
+                );
+
+                // Guardar en localStorage (como hace Vue)
+                localStorage.setItem('sge_token', token);
+                localStorage.setItem('sge_user', JSON.stringify(user));
+
+                // PASO 2: GET /me
+                log('meResult', '⏳ Obteniendo datos del usuario...', 'info');
+                
+                const meResponse = await fetch(`${API_BASE}/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                    }
+                });
+
+                if (!meResponse.ok) {
+                    const meError = await meResponse.text();
+                    log('meResult', 
+                        `❌ /me FALLÓ (${meResponse.status})\n\n` +
+                        `Esto es lo que causa que la sesión se cierre!\n\n` +
+                        meError, 
+                        'error'
+                    );
+                    log('summary', 
+                        `❌ /me FALLÓ - Este es el problema!\n` +
+                        `El interceptor de Axios ve el error ${meResponse.status} y cierra la sesión.\n` +
+                        `Ver detalles en PASO 3 arriba.`, 
+                        'error'
+                    );
+                    return;
+                }
+
+                const meData = await meResponse.json();
+                log('meResult', 
+                    `✅ /me EXITOSO (200)\n\n` +
+                    JSON.stringify(meData, null, 2), 
+                    'success'
+                );
+
+                // PASO 3: Test Dashboard Endpoint
+                const dashboardRoutes = {
+                    'desarrollador': '/dev/dashboard',
+                    'soporte_it': '/soporte/dashboard',
+                    'administrativo': '/admin/dashboard',
+                    'profesor': '/profesor/dashboard',
+                    'estudiante': '/estudiante/dashboard'
+                };
+
+                const dashboardPath = dashboardRoutes[user.role];
+                
+                if (dashboardPath) {
+                    log('dashboardResult', `⏳ Probando ${dashboardPath}...`, 'info');
+                    
+                    const dashResponse = await fetch(`${API_BASE}${dashboardPath}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/json',
+                        }
+                    });
+
+                    if (!dashResponse.ok) {
+                        const dashError = await dashResponse.text();
+                        log('dashboardResult', 
+                            `❌ DASHBOARD FALLÓ (${dashResponse.status})\n\n` +
+                            dashError, 
+                            'error'
+                        );
+                    } else {
+                        const dashData = await dashResponse.json();
+                        log('dashboardResult', 
+                            `✅ DASHBOARD EXITOSO (200)\n\n` +
+                            JSON.stringify(dashData, null, 2).substring(0, 500) + '...', 
+                            'success'
+                        );
+                    }
+                }
+
+                // RESUMEN
+                log('summary', 
+                    `✅ TODOS LOS PASOS EXITOSOS\n\n` +
+                    `✓ Login: OK\n` +
+                    `✓ /me: OK\n` +
+                    `✓ Dashboard: OK\n\n` +
+                    `El flujo de autenticación funciona correctamente.\n` +
+                    `Si aún ves el error en el frontend, revisa:\n` +
+                    `1. La configuración del proxy en vite.config.js\n` +
+                    `2. La consola del navegador (F12) en el frontend\n` +
+                    `3. Que no haya requests duplicados a /me`, 
+                    'success'
+                );
+
+            } catch (error) {
+                log('summary', 
+                    `❌ ERROR DE RED\n\n` +
+                    `${error.message}\n\n` +
+                    `Verifica que el backend esté corriendo en localhost:8000`, 
+                    'error'
+                );
+            }
+        }
+
+        // Auto-cargar datos del localStorage si existen
+        window.addEventListener('load', () => {
+            const savedToken = localStorage.getItem('sge_token');
+            const savedUser = localStorage.getItem('sge_user');
+            
+            if (savedToken && savedUser) {
+                token = savedToken;
+                user = JSON.parse(savedUser);
+                log('summary', 
+                    `ℹ️ Sesión anterior encontrada en localStorage\n\n` +
+                    `Token: ${token.substring(0, 30)}...\n` +
+                    `User: ${savedUser}\n\n` +
+                    `Haz click en "Limpiar Todo" y prueba de nuevo.`, 
+                    'info'
+                );
+            }
+        });
+    </script>
+</body>
+</html>
