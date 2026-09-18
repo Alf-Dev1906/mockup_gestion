@@ -4,16 +4,11 @@ import axios from 'axios'
 const getBaseURL = () => {
   // Si existe VITE_API_BASE_URL (producción), usarla
   const apiUrl = import.meta.env.VITE_API_BASE_URL
-  console.log('🔍 VITE_API_BASE_URL:', apiUrl)
-  console.log('🔍 import.meta.env.MODE:', import.meta.env.MODE)
-  console.log('🔍 import.meta.env.PROD:', import.meta.env.PROD)
 
   if (apiUrl) {
-    console.log('✅ Usando API URL:', `${apiUrl}/api`)
     return `${apiUrl}/api`
   }
   // En desarrollo local, usar proxy de Vite
-  console.log('🏠 Usando proxy local:', '/api')
   return '/api'
 }
 
