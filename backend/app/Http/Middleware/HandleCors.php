@@ -15,6 +15,24 @@ class HandleCors
      */
     public function handle(Request $request, Closure $next): Response
     {
-        return $next($request);
+        $response = $next($request);
+
+        // Permitir solicitudes desde Netlify (y localhost para desarrollo)
+        $allowedOrigins = [
+            'https://mockup-gestion-frontend.netlify.app',
+            'http://localhost:5173',
+            'http://localhost:3000',
+        ];
+
+        $origin = $request->header('Origin');
+        
+        if (in_array($origin, $allowedOrigins)) {
+            $response->header('Access-Control-Allow-Origin', $origin);
+            $response->header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+            $response->header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            $response->header('Access-Control-Allow-Credentials', 'true');
+        }
+
+        return $response;
     }
 }
