@@ -4,6 +4,9 @@ FROM php:8.2-fpm
 RUN apt-get update && apt-get install -y \
     mariadb-client \
     libpq-dev \
+    zip \
+    unzip \
+    git \
     && docker-php-ext-install pdo pdo_mysql
 
 # Instalar Composer
