@@ -2,9 +2,10 @@ import axios from 'axios'
 
 // Determinar URL base según entorno
 const getBaseURL = () => {
-  // En producción (Netlify), usar VITE_API_BASE_URL
-  if (import.meta.env.PROD && import.meta.env.VITE_API_BASE_URL) {
-    return `${import.meta.env.VITE_API_BASE_URL}/api`
+  // Si existe VITE_API_BASE_URL (producción), usarla
+  const apiUrl = import.meta.env.VITE_API_BASE_URL
+  if (apiUrl) {
+    return `${apiUrl}/api`
   }
   // En desarrollo local, usar proxy de Vite
   return '/api'
