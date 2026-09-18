@@ -13,14 +13,10 @@ return new class extends Migration
         DB::table('users')->where('role', 'admin')->update(['role' => 'administrativo']);
         DB::table('users')->whereNotIn('role', ['estudiante', 'profesor', 'administrativo'])->update(['role' => 'estudiante']);
         
-        // 2. Actualizar columna role en users (PostgreSQL compatible)
-        // En PostgreSQL, cambiar el tipo requiere usar ALTER TYPE o recrear
-        DB::statement("ALTER TABLE users ALTER COLUMN role TYPE VARCHAR(50)");
-        DB::statement("ALTER TABLE users ALTER COLUMN role SET DEFAULT 'estudiante'");
-
-        // 2b. Actualizar columna estatus en estudiantes (PostgreSQL compatible)
-        DB::statement("ALTER TABLE estudiantes ALTER COLUMN estatus TYPE VARCHAR(50)");
-        DB::statement("ALTER TABLE estudiantes ALTER COLUMN estatus SET DEFAULT 'activo'");
+        // 2. No es necesario alterar el tipo de columna 'role' en SQLite
+        // Laravel maneja enum como strings automáticamente
+        
+        // 2b. No es necesario alterar el tipo de columna 'estatus' en SQLite
 
         // 2c. Agregar user_id a estudiantes
         Schema::table('estudiantes', function (Blueprint $table) {

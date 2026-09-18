@@ -8,6 +8,46 @@ use Illuminate\Support\Facades\DB;
 class DatabaseSeeder extends Seeder
 {
     /**
+     * Desactivar foreign key checks según el motor de BD
+     */
+    protected function disableForeignKeyChecks(): void
+    {
+        $driver = DB::getDriverName();
+        
+        switch ($driver) {
+            case 'mysql':
+                DB::statement('SET FOREIGN_KEY_CHECKS=0');
+                break;
+            case 'sqlite':
+                DB::statement('PRAGMA foreign_keys = OFF');
+                break;
+            case 'pgsql':
+                // PostgreSQL no necesita desactivar FK checks para inserciones masivas
+                break;
+        }
+    }
+
+    /**
+     * Reactivar foreign key checks según el motor de BD
+     */
+    protected function enableForeignKeyChecks(): void
+    {
+        $driver = DB::getDriverName();
+        
+        switch ($driver) {
+            case 'mysql':
+                DB::statement('SET FOREIGN_KEY_CHECKS=1');
+                break;
+            case 'sqlite':
+                DB::statement('PRAGMA foreign_keys = ON');
+                break;
+            case 'pgsql':
+                // PostgreSQL no necesita reactivar FK checks
+                break;
+        }
+    }
+
+    /**
      * Seed the application's database.
      * 
      * Este seeder poblará la base de datos con datos masivos para simular
@@ -53,7 +93,7 @@ class DatabaseSeeder extends Seeder
         echo str_repeat("═", 64) . "\n\n";
 
         // Desactivar foreign key checks temporalmente para mejor performance
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        $this->disableForeignKeyChecks();
 
         try {
             // 0. Usuario Administrador
@@ -100,7 +140,7 @@ class DatabaseSeeder extends Seeder
 
         } finally {
             // Reactivar foreign key checks
-            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            $this->enableForeignKeyChecks();
         }
 
         $totalTime = round(microtime(true) - $startTime, 2);
