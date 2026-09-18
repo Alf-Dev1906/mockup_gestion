@@ -31,8 +31,12 @@ RUN php artisan key:generate || true
 RUN mkdir -p storage/logs bootstrap/cache \
     && chmod -R 777 storage bootstrap/cache
 
+# Copiar script de inicio
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 EXPOSE 8000
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+CMD ["/app/start.sh"]
 
 
