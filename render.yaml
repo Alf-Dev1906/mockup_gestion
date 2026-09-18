@@ -1,10 +1,9 @@
 services:
   - type: web
     name: mockup-gestion-backend
-    runtime: php
+    runtime: docker
     plan: free
-    buildCommand: composer install && php artisan key:generate && php artisan migrate:fresh --seed
-    startCommand: php -S 0.0.0.0:10000 -t public
+    dockerfilePath: Dockerfile
     envVars:
       - key: APP_NAME
         value: SGE
@@ -19,7 +18,7 @@ services:
       - key: DB_HOST
         value: ${{ mysql.MYSQL_HOST }}
       - key: DB_PORT
-        value: ${{ mysql.MYSQL_PORT }}
+        value: 3306
       - key: DB_DATABASE
         value: ${{ mysql.MYSQL_DATABASE }}
       - key: DB_USERNAME
@@ -29,7 +28,7 @@ services:
       - key: CACHE_DRIVER
         value: file
       - key: SESSION_DRIVER
-        value: file
+        value: cookie
       - key: QUEUE_CONNECTION
         value: sync
       - key: LOG_CHANNEL
