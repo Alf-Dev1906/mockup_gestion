@@ -13,23 +13,23 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /app/backend
 
 # Copiar archivos
-COPY backend /app/backend
-COPY .env.example /app/backend/.env
+COPY backend/ /app/backend/
+
+# Copiar .env.example desde backend
+RUN cp .env.example .env || true
 
 # Instalar dependencias de PHP
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
 # Generar key
-RUN php artisan key:generate
+RUN php artisan key:generate || true
 
 # Cambiar permisos
 RUN mkdir -p storage/logs bootstrap/cache \
     && chmod -R 777 storage bootstrap/cache
 
-# Ejecutar migraciones y seeds (esto se puede comentar si hay errores)
-# RUN php artisan migrate:fresh --seed --force 2>/dev/null || true
-
 EXPOSE 8000
 
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+
 
