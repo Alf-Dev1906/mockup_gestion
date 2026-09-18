@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('telefono_alternativo', 20)->nullable();
             $table->text('direccion')->nullable();
             $table->string('ciudad', 100)->nullable();
-            $table->string('estado', 100)->nullable();
+            $table->string('estado_provincia', 100)->nullable();
             $table->string('codigo_postal', 10)->nullable();
             
             // Contacto de emergencia
