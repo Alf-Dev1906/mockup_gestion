@@ -2,7 +2,7 @@ FROM php:8.2-fpm
 
 # Instalar extensiones necesarias
 RUN apt-get update && apt-get install -y \
-    mysql-client \
+    mariadb-client \
     libpq-dev \
     && docker-php-ext-install pdo pdo_mysql
 
