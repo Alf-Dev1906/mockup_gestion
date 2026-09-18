@@ -7,9 +7,8 @@ echo "🚀 Iniciando aplicación Laravel..."
 echo "📦 Ejecutando migraciones..."
 php artisan migrate --force
 
-# Ejecutar seeders
-echo "🌱 Ejecutando seeders..."
-php artisan db:seed --force
+# NO ejecutar seeders en producción (requieren Faker que no está en --no-dev)
+# Para datos de prueba, ejecutar manualmente: php artisan db:seed
 
 # Limpiar cache
 echo "🧹 Limpiando cache..."
