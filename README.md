@@ -1,263 +1,331 @@
-# 🎓 Sistema de Gestión Universitaria (SGU)
+# 🎓 mockup_gestion - Sistema de Gestión Universitaria
 
-Sistema completo de gestión académica desarrollado con **Laravel 11** (backend) y **Vue 3 + Vite** (frontend).
+> **Sistema completo de gestión académica con backend Laravel y frontend Vue.js - Listo para mostrar a tus partners**
 
-## 📋 Características Principales
+---
 
-### 🔐 Autenticación
-- Sistema de login con Laravel Sanctum
-- Gestión de roles (admin)
-- Sesiones persistentes con tokens Bearer
-- Protección de rutas privadas
+## 🎯 ¿Qué es esto?
 
-### 📚 Módulos Administrativos
-1. **Facultades** - Gestión de facultades universitarias
-2. **Carreras** - Catálogo de programas académicos (TSU, Licenciatura, Ingeniería)
-3. **Estudiantes** - Registro y seguimiento de estudiantes
-4. **Profesores** - Gestión del personal docente
-5. **Materias** - Catálogo de asignaturas por carrera
-6. **Aulas** - Administración de espacios físicos
-7. **Horarios** - Programación de clases con validación de conflictos
-8. **Inscripciones** - Gestión de inscripciones de estudiantes
-9. **Calificaciones** - Sistema de evaluación (30%-30%-40%)
+**mockup_gestion** es un sistema de gestión universitaria completamente funcional que incluye:
 
-### 🌐 Sitio Web Público
-- **Home** - Landing page institucional
-- **Carreras** - Catálogo público con filtros por nivel
-- **Noticias** - Sistema de noticias con categorías
-- **Contacto** - Formulario de contacto con validación
+- ✅ **Portal Administrativo** - Gestión completa del sistema
+- ✅ **Portal Profesor** - Calificaciones, tareas, exámenes, horarios
+- ✅ **Portal Estudiante** - Mis cursos, calificaciones, entregas
+- ✅ **Landing Page** - Presentación moderna con carrusel hero
+- ✅ **Aula Virtual** - Exámenes, tareas, asistencia
 
-## 🚀 Estado del Proyecto
+---
 
-### ✅ Backend (Laravel)
-- ✓ API REST completa con 10 controladores
-- ✓ Autenticación con Sanctum
-- ✓ Middleware de autorización por roles
-- ✓ Validación robusta en todos los endpoints
-- ✓ CORS configurado para desarrollo
-- ✓ Rate limiting en endpoints sensibles
-- ✓ Base de datos poblada con datos de prueba:
-  - 100,000 estudiantes
-  - 5,000 profesores
-  - 1,254 materias
-  - 800 aulas
-  - 15,000 horarios
-  - 250,135 inscripciones
-  - 149,998 calificaciones
+## 🚀 Deploy Rápido (15 minutos)
 
-### ✅ Frontend (Vue 3)
-- ✓ Sistema de rutas con Vue Router
-- ✓ Estado global con Pinia
-- ✓ Diseño responsive con Tailwind CSS
-- ✓ Interceptores de Axios configurados
-- ✓ Sistema de notificaciones toast
-- ✓ Manejo de errores global
-- ✓ 10 vistas administrativas completas
-- ✓ 4 vistas públicas implementadas
-- ✓ Componentes reutilizables
+### **Opción 1: Deploy Automático** ⭐ (Recomendado)
 
-## 🛠️ Tecnologías
+Lee [QUICK_START.md](./QUICK_START.md) - Pasos simplificados
+
+```
+⏱️ 15 minutos de tu tiempo
+💰 100% gratis (Render + Netlify)
+🌍 URLs públicas funcionando
+```
+
+### **Opción 2: Deploy Detallado**
+
+Lee [README_DEPLOYMENT.md](./README_DEPLOYMENT.md) - Guía completa
+
+---
+
+## 📱 URLs después de Deploy
+
+```
+🎨 Frontend:  https://mockup-gestion-frontend.netlify.app
+🔧 API:       https://mockup-gestion-backend.onrender.com/api
+📊 Docs:      https://mockup-gestion-backend.onrender.com/api/docs
+```
+
+---
+
+## 🔐 Prueba Inmediata
+
+### Credenciales (todas con password `Admin2026!`):
+
+| Rol | Email | Acceso |
+|-----|-------|--------|
+| 👨‍💼 **Admin** | admin@universidad.edu.ve | Dashboard, auditoría, usuarios |
+| 👨‍🏫 **Profesor** | profesor@universidad.edu.ve | Calificaciones, tareas, exámenes |
+| 👨‍🎓 **Estudiante** | estudiante@universidad.edu.ve | Mis notas, tareas, exámenes |
+| 📝 **Solicitante** | solicitante@universidad.edu.ve | Solicitud de admisión |
+
+---
+
+## 💾 Datos Pre-poblados
+
+Ya incluye:
+
+```
+✅ 60 estudiantes inscritos
+✅ 3 materias activas
+✅ 3 horarios (Lunes 08:00-10:00)
+✅ 12 tareas con entregas calificadas
+✅ 4 exámenes parciales
+✅ 3 calificaciones (18.5/20)
+```
+
+---
+
+## 🏗️ Estructura del Proyecto
+
+```
+mockup_gestion/
+│
+├── 📂 backend/                    # API Laravel 11
+│   ├── app/Http/Controllers/      # Controladores
+│   ├── app/Models/                # Modelos (Estudiante, Profesor, etc)
+│   ├── database/migrations/       # Migraciones de BD
+│   ├── database/seeders/          # Datos iniciales
+│   ├── routes/api.php             # Rutas de API
+│   └── .env.example               # Variables de entorno
+│
+├── 📂 frontend/                   # App Vue 3
+│   ├── src/views/                 # Páginas principales
+│   ├── src/components/            # Componentes reutilizables
+│   ├── src/router/                # Rutas del frontend
+│   ├── src/stores/                # Estado global (Pinia)
+│   └── vite.config.js             # Configuración Vite
+│
+├── 📄 QUICK_START.md              # ⭐ Empieza aquí
+├── 📄 README_DEPLOYMENT.md        # Guía completa
+├── 📄 DEPLOYMENT.md               # Detalles técnicos
+├── 🔧 render.yaml                 # Config Render
+├── 🔧 netlify.toml                # Config Netlify
+└── 📄 README.md                   # Este archivo
+```
+
+---
+
+## 🛠️ Stack Tecnológico
 
 ### Backend
-- **Laravel 11** - Framework PHP
-- **MySQL** - Base de datos (vía XAMPP)
-- **Sanctum** - Autenticación API
-- **Eloquent ORM** - Manejo de modelos
+```
+Framework: Laravel 11
+Database: MySQL 8.4 (MariaDB)
+Auth: Sanctum (JWT tokens)
+API: RESTful + JSON
+Testing: PHPUnit
+Server: Apache/Nginx compatible
+```
 
 ### Frontend
-- **Vue 3** - Framework JavaScript
-- **Vite** - Build tool y dev server
-- **Tailwind CSS** - Framework CSS
-- **Pinia** - State management
-- **Axios** - Cliente HTTP
-- **Vue Router** - Enrutamiento
+```
+Framework: Vue 3 (Composition API)
+Build: Vite
+Styling: Tailwind CSS + DaisyUI
+HTTP: Axios
+State: Pinia
+Router: Vue Router 4
+Icons: Heroicons
+```
 
-## 📦 Instalación y Ejecución
+---
 
-### Requisitos Previos
-- PHP 8.2+
-- Composer
-- Node.js 24+
-- MySQL (XAMPP)
+## 📊 Funcionalidades Principales
 
-### Backend (Puerto 8000)
+### 🏫 Admin Dashboard
+- 📈 Estadísticas del sistema
+- 👥 Gestión de usuarios y roles
+- 📋 Auditoría de acciones
+- ⚙️ Configuración del sistema
+
+### 👨‍🏫 Portal Profesor
+```
+Materias      → Ver mis materias y horarios
+Calificaciones → Calificar a estudiantes
+Tareas        → Crear, enviar feedback, calificar entregas
+Exámenes      → Crear preguntas, calificar respuestas
+Asistencia    → Marcar asistencia
+Aula Virtual  → Todo centralizado
+```
+
+### 👨‍🎓 Portal Estudiante
+```
+Inscripción   → Ver materias inscritas
+Calificaciones → Ver mis notas
+Tareas        → Entregar trabajos
+Exámenes      → Resolver pruebas online
+Asistencia    → Ver registro de asistencia
+Aula Virtual  → Acceder a recursos
+```
+
+### 🏠 Landing Page
+```
+Hero Carrusel  → 4 slides animados
+Estadísticas   → 10K+ estudiantes, 50+ años, etc
+Carreras       → Descripción de programas
+Noticias       → Actualizaciones recientes
+CTA Sections   → Botones de inscripción
+```
+
+---
+
+## 🚀 Ejecución Local
+
+### Backend
+
 ```bash
 cd backend
+
+# Copiar configuración
+cp .env.example .env
+
+# Generar key
+php artisan key:generate
+
+# Instalar dependencias
 composer install
-php artisan migrate --seed
+
+# Ejecutar migraciones con datos de prueba
+php artisan migrate:fresh --seed
+
+# Iniciar servidor
 php artisan serve
 ```
 
-### Frontend (Puerto 5174)
+Backend en: `http://localhost:8000`
+
+### Frontend
+
 ```bash
 cd frontend
+
+# Instalar dependencias
 npm install
+
+# Desarrollo
 npm run dev
+
+# Producción
+npm run build
 ```
 
-## 🔑 Credenciales de Acceso
-
-### Usuario Administrador
-- **Email:** admin@universidad.edu.ve
-- **Password:** Admin123!
-
-## 📡 Endpoints Principales
-
-### Públicos (sin autenticación)
-- `GET /api/public/carreras` - Lista de carreras
-- `GET /api/public/facultades` - Lista de facultades
-- `POST /api/login` - Iniciar sesión
-
-### Protegidos (requieren token)
-- `GET /api/me` - Información del usuario autenticado
-- `POST /api/logout` - Cerrar sesión
-- `GET|POST|PUT|DELETE /api/{recurso}` - CRUD completo
-
-## 🎨 Características del Frontend
-
-### Sistema de Notificaciones
-- Toasts animados para feedback al usuario
-- 4 tipos: success, error, warning, info
-- Auto-dismiss configurable
-- Manejo automático de errores HTTP
-
-### Vistas Administrativas
-Todas las vistas incluyen:
-- Búsqueda en tiempo real
-- Filtros dinámicos
-- Paginación
-- Modales para crear/editar
-- Validación de formularios
-- Mensajes de confirmación
-
-### Diseño Responsive
-- Mobile-first approach
-- Breakpoints optimizados
-- Navegación adaptativa
-- Grid systems flexibles
-
-## 📂 Estructura del Proyecto
-
-```
-Gestion_uni/
-├── backend/
-│   ├── app/
-│   │   ├── Http/Controllers/Api/
-│   │   ├── Models/
-│   │   └── Providers/
-│   ├── database/
-│   │   ├── factories/
-│   │   ├── migrations/
-│   │   └── seeders/
-│   └── routes/api.php
-│
-└── frontend/
-    ├── src/
-    │   ├── components/
-    │   ├── composables/
-    │   ├── layouts/
-    │   ├── router/
-    │   ├── services/
-    │   ├── stores/
-    │   └── views/
-    │       ├── admin/
-    │       └── [públicas]
-    └── vite.config.js
-```
-
-## 🔄 Flujos de Trabajo
-
-### Login
-1. Usuario ingresa credenciales en `/login`
-2. Backend valida y retorna token + datos de usuario
-3. Token se almacena en localStorage
-4. Redirección automática al dashboard
-
-### CRUD Genérico
-1. Vista carga datos con paginación
-2. Usuario aplica filtros (búsqueda, categorías, etc.)
-3. Crear/Editar abre modal con formulario
-4. Validación en frontend + backend
-5. Toast de confirmación o error
-6. Recarga automática de datos
-
-### Manejo de Errores
-1. Error HTTP capturado por interceptor
-2. Clasificación por código de estado
-3. Toast automático con mensaje apropiado
-4. Log en consola para debugging
-5. Redirección en caso de sesión expirada
-
-## 🧪 Testing Realizado
-
-### Backend
-- ✓ Migraciones ejecutadas correctamente
-- ✓ Seeders poblaron 7 tablas con datos
-- ✓ Endpoints públicos responden correctamente
-- ✓ CORS configurado para localhost:5174
-
-### Frontend
-- ✓ Servidor Vite corriendo en puerto 5174
-- ✓ Proxy a backend funcionando
-- ✓ Rutas públicas y protegidas configuradas
-- ✓ Sistema de notificaciones operativo
-- ✓ Todas las vistas renderizando correctamente
-
-## 🚦 Estado de los Servidores
-
-### Backend
-- **URL:** http://127.0.0.1:8000
-- **Estado:** ✅ Running
-- **Base de datos:** ✅ Conectada (sge_db)
-
-### Frontend
-- **URL:** http://localhost:5174
-- **Estado:** ✅ Running
-- **Proxy:** ✅ Configurado a localhost:8000
-
-## 📝 Notas Importantes
-
-1. **Puerto Frontend:** El frontend está corriendo en el puerto 5174 en lugar de 5173 porque este último estaba ocupado.
-
-2. **CORS:** La configuración de CORS en el backend permite peticiones desde `localhost:5173` y `localhost:5174`.
-
-3. **Datos de Prueba:** La base de datos tiene un volumen significativo de datos de prueba (100k+ estudiantes), ideal para testing de rendimiento.
-
-4. **Validación:** Todas las vistas administrativas tienen validación tanto en frontend como backend.
-
-5. **Sesiones:** Los tokens tienen una duración de 120 minutos y se renuevan automáticamente.
-
-## 🔮 Próximas Mejoras Sugeridas
-
-- [ ] Dashboard con gráficas estadísticas
-- [ ] Exportación de reportes en PDF/Excel
-- [ ] Sistema de notificaciones en tiempo real
-- [ ] Módulo de mensajería interna
-- [ ] Calendario académico interactivo
-- [ ] Aplicación móvil (React Native)
-- [ ] Tests automatizados (PHPUnit + Vitest)
-- [ ] CI/CD con GitHub Actions
-- [ ] Dockerización del proyecto
-- [ ] PWA para uso offline
-
-## 👥 Créditos
-
-Sistema desarrollado para la gestión académica universitaria.
-
-**Año:** 2026  
-**Framework Backend:** Laravel 11  
-**Framework Frontend:** Vue 3  
+Frontend en: `http://localhost:5173`
 
 ---
 
-## 📞 Soporte
+## 🔑 Variables de Entorno
 
-Para dudas o problemas:
-- Revisar logs del backend en `backend/storage/logs/`
-- Revisar consola del navegador para errores de frontend
-- Verificar que XAMPP (MySQL) esté corriendo
-- Confirmar que ambos servidores estén activos
+### Backend (.env)
+```env
+APP_NAME=SGE
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://mockup-gestion-backend.onrender.com
+
+DB_CONNECTION=mysql
+DB_HOST=mysql.render.internal
+DB_PORT=3306
+DB_DATABASE=sge_db
+DB_USERNAME=admin
+DB_PASSWORD=your_password
+```
+
+### Frontend (.env.production)
+```env
+VITE_API_BASE_URL=https://mockup-gestion-backend.onrender.com/api
+```
 
 ---
 
-**¡Sistema listo para usar!** 🎉
+## 🐛 Troubleshooting
+
+### ❌ Backend duerme en Render
+**Causa:** Free tier duerme después de 15 min sin actividad
+
+**Solución:**
+1. Usar UptimeRobot para hacer ping cada 5 min
+2. O actualizar a plan pago
+
+### ❌ Error CORS en consola
+**Causa:** URLs no coinciden
+
+**Solución:**
+- Verificar `APP_URL` en backend
+- Verificar `VITE_API_BASE_URL` en frontend
+- Redeploy ambos
+
+### ❌ 404 en rutas del frontend
+**Causa:** Netlify no redirige a index.html
+
+**Solución:**
+- `netlify.toml` debe existir
+- Redeploy en Netlify
+
+---
+
+## 📚 Documentación Adicional
+
+- **[QUICK_START.md](./QUICK_START.md)** - Pasos rápidos de deployment ⭐
+- **[README_DEPLOYMENT.md](./README_DEPLOYMENT.md)** - Guía completa
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Detalles técnicos y variables
+- **[backend/API_DOCUMENTATION.md](./backend/API_DOCUMENTATION.md)** - Endpoints disponibles
+- **[MOTOR_JSON_EXAMENES.md](./MOTOR_JSON_EXAMENES.md)** - Cómo funciona el motor de evaluación
+
+---
+
+## 📊 Estadísticas del Proyecto
+
+```
+Archivos: 150+
+Lineas de código: 20,000+
+Componentes Vue: 40+
+Endpoints API: 50+
+Modelos Eloquent: 20+
+Migraciones: 25+
+```
+
+---
+
+## 🎯 Roadmap Futuro
+
+- [ ] Sistema de notificaciones en tiempo real (WebSockets)
+- [ ] Exportar calificaciones a PDF
+- [ ] Videollamadas para tutoría
+- [ ] Sistema de becas
+- [ ] Integración con correo electrónico
+- [ ] Certificados digitales
+- [ ] Mobile app (React Native)
+
+---
+
+## 👨‍💻 Autor
+
+**Alf-Dev1906**  
+📧 danluissantanat@gmail.com  
+🔗 https://github.com/Alf-Dev1906
+
+---
+
+## 📄 Licencia
+
+Proyecto privado - Solo para demo y presentación a partners
+
+---
+
+## 🙏 Créditos
+
+- **Framework:** Laravel, Vue.js, Tailwind CSS
+- **Hosting:** Render, Netlify
+- **Database:** MySQL
+- **Icons:** Heroicons
+
+---
+
+<div align="center">
+
+### 🚀 **¿Listo para empezar?**
+
+**[👉 Lee QUICK_START.md para deployment en 15 minutos](./QUICK_START.md)**
+
+---
+
+**Hecho con ❤️ para mostrar lo que puedes lograr**
+
+</div>
