@@ -83,6 +83,24 @@ try {
             ], JSON_PRETTY_PRINT);
             break;
             
+        case 'reset':
+            // Limpiar datos de demo (NO borra usuarios ni tablas)
+            \DB::statement('SET CONSTRAINTS ALL DEFERRED');
+            \App\Models\Inscripcion::truncate();
+            \App\Models\Horario::truncate();
+            \App\Models\Estudiante::where('id', '>', 2)->delete(); // Mantener demos
+            \App\Models\Profesor::where('id', '>', 1)->delete(); // Mantener demos
+            \App\Models\Materia::truncate();
+            \App\Models\Aula::truncate();
+            \App\Models\Carrera::truncate();
+            \App\Models\Facultad::truncate();
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'Datos de demo limpiados (usuarios intactos)'
+            ], JSON_PRETTY_PRINT);
+            break;
+            
         case 'menu':
         default:
             echo json_encode([
@@ -91,6 +109,7 @@ try {
                     'migrate' => '?action=migrate',
                     'seed' => '?action=seed&seeder=UserSeeder',
                     'verify' => '?action=verify',
+                    'reset' => '?action=reset (limpia datos de demo)',
                 ],
                 'seeders' => [
                     'UserSeeder',
