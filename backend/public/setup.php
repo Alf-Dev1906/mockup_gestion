@@ -50,19 +50,29 @@ try {
             
             set_time_limit(900); // 15 minutos
             ini_set('memory_limit', '512M');
+            ini_set('display_errors', 1);
+            error_reporting(E_ALL);
             
             ob_start();
-            Artisan::call('db:seed', [
-                '--class' => $seeder,
-                '--force' => true
-            ]);
-            $output = ob_get_clean();
             
-            echo json_encode([
-                'success' => true,
-                'message' => "Seeder {$seeder} ejecutado",
-                'output' => Artisan::output()
-            ], JSON_PRETTY_PRINT);
+            try {
+                Artisan::call('db:seed', [
+                    '--class' => $seeder,
+                    '--force' => true
+                ]);
+                
+                $output = ob_get_clean();
+                
+                echo json_encode([
+                    'success' => true,
+                    'message' => "Seeder {$seeder} ejecutado",
+                    'output' => Artisan::output(),
+                    'captured' => $output
+                ], JSON_PRETTY_PRINT);
+            } catch (\Exception $e) {
+                $output = ob_get_clean();
+                throw new Exception("Error en seeder: " . $e->getMessage() . "\nOutput: " . $output, 0, $e);
+            }
             break;
             
         case 'verify':
@@ -97,6 +107,20 @@ try {
             echo json_encode([
                 'success' => true,
                 'message' => 'Datos de demo limpiados (usuarios intactos)'
+            ], JSON_PRETTY_PRINT);
+            break;
+            
+        case 'test':
+            // Endpoint de prueba para diagnosticar
+            echo json_encode([
+                'success' => true,
+                'php_version' => PHP_VERSION,
+                'laravel_version' => app()->version(),
+                'db_connection' => config('database.default'),
+                'memory_limit' => ini_get('memory_limit'),
+                'max_execution_time' => ini_get('max_execution_time'),
+                'db_tables' => \DB::select("SELECT tablename FROM pg_tables WHERE schemaname = 'public'"),
+                'users_count' => \DB::table('users')->count(),
             ], JSON_PRETTY_PRINT);
             break;
             
