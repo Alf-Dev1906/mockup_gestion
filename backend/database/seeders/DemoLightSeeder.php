@@ -47,6 +47,7 @@ class DemoLightSeeder extends Seeder
                 'facultad_id' => $facId,
                 'nombre' => "Carrera A - Facultad {$facId}",
                 'codigo' => "CA{$facId}",
+                'titulo_otorgado' => "Licenciado en Carrera A",
                 'duracion_semestres' => 10,
                 'creditos_totales' => 200
             ]);
@@ -55,6 +56,7 @@ class DemoLightSeeder extends Seeder
                 'facultad_id' => $facId,
                 'nombre' => "Carrera B - Facultad {$facId}",
                 'codigo' => "CB{$facId}",
+                'titulo_otorgado' => "Ingeniero en Carrera B",
                 'duracion_semestres' => 8,
                 'creditos_totales' => 180
             ]);
