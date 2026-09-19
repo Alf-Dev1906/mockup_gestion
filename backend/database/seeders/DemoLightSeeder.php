@@ -51,7 +51,7 @@ class DemoLightSeeder extends Seeder
                 'duracion_semestres' => 10,
                 'creditos_totales' => 200,
                 'modalidad' => 'presencial',
-                'nivel_academico' => 'licenciatura'
+                'activo' => true
             ]);
             
             Carrera::create([
@@ -62,7 +62,7 @@ class DemoLightSeeder extends Seeder
                 'duracion_semestres' => 10,
                 'creditos_totales' => 220,
                 'modalidad' => 'presencial',
-                'nivel_academico' => 'licenciatura'
+                'activo' => true
             ]);
         }
         echo "✅ 10 carreras creadas\n";
