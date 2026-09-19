@@ -17,6 +17,7 @@ class DemoLightSeeder extends Seeder
     /**
      * Versión LIGERA del DemoSeeder para Render
      * Genera datos mínimos pero suficientes para demostración
+     * Optimizado para completarse en ~60 segundos
      */
     public function run(): void
     {
@@ -25,11 +26,11 @@ class DemoLightSeeder extends Seeder
         // PASO 1: Facultades (solo 5)
         echo "\n📚 Creando 5 facultades...\n";
         $facultades = [
-            ['nombre' => 'Facultad de Ingeniería', 'codigo' => 'ING'],
-            ['nombre' => 'Facultad de Ciencias', 'codigo' => 'CIE'],
-            ['nombre' => 'Facultad de Humanidades', 'codigo' => 'HUM'],
-            ['nombre' => 'Facultad de Medicina', 'codigo' => 'MED'],
-            ['nombre' => 'Facultad de Derecho', 'codigo' => 'DER'],
+            ['nombre' => 'Facultad de Ingeniería', 'codigo' => 'ING', 'descripcion' => 'Facultad de Ingeniería'],
+            ['nombre' => 'Facultad de Ciencias', 'codigo' => 'CIE', 'descripcion' => 'Facultad de Ciencias'],
+            ['nombre' => 'Facultad de Humanidades', 'codigo' => 'HUM', 'descripcion' => 'Facultad de Humanidades y Educación'],
+            ['nombre' => 'Facultad de Medicina', 'codigo' => 'MED', 'descripcion' => 'Facultad de Ciencias de la Salud'],
+            ['nombre' => 'Facultad de Derecho', 'codigo' => 'DER', 'descripcion' => 'Facultad de Ciencias Jurídicas y Políticas'],
         ];
         
         foreach ($facultades as $fac) {
@@ -40,25 +41,28 @@ class DemoLightSeeder extends Seeder
         // PASO 2: Carreras (2 por facultad = 10 carreras)
         echo "\n📖 Creando 10 carreras...\n";
         $facultadesIds = Facultad::pluck('id')->toArray();
-        $carreras = [];
         
         foreach ($facultadesIds as $facId) {
             Carrera::create([
                 'facultad_id' => $facId,
-                'nombre' => "Carrera A - Facultad {$facId}",
-                'codigo' => "CA{$facId}",
-                'titulo_otorgado' => "Licenciado en Carrera A",
+                'nombre' => "Licenciatura en Ciencias - Facultad {$facId}",
+                'codigo' => "LIC{$facId}",
+                'titulo_otorgado' => "Licenciado en Ciencias",
                 'duracion_semestres' => 10,
-                'creditos_totales' => 200
+                'creditos_totales' => 200,
+                'modalidad' => 'presencial',
+                'nivel_academico' => 'licenciatura'
             ]);
             
             Carrera::create([
                 'facultad_id' => $facId,
-                'nombre' => "Carrera B - Facultad {$facId}",
-                'codigo' => "CB{$facId}",
-                'titulo_otorgado' => "Ingeniero en Carrera B",
-                'duracion_semestres' => 8,
-                'creditos_totales' => 180
+                'nombre' => "Ingeniería en Tecnología - Facultad {$facId}",
+                'codigo' => "ING{$facId}",
+                'titulo_otorgado' => "Ingeniero en Tecnología",
+                'duracion_semestres' => 10,
+                'creditos_totales' => 220,
+                'modalidad' => 'presencial',
+                'nivel_academico' => 'licenciatura'
             ]);
         }
         echo "✅ 10 carreras creadas\n";
@@ -74,8 +78,12 @@ class DemoLightSeeder extends Seeder
                     'nombre' => "Materia {$i} - Carrera {$carreraId}",
                     'codigo' => "MAT{$carreraId}-{$i}",
                     'creditos' => rand(3, 5),
-                    'semestre' => $i,
-                    'horas_semanales' => rand(3, 6)
+                    'horas_teoricas' => rand(2, 4),
+                    'horas_practicas' => rand(0, 2),
+                    'horas_laboratorio' => rand(0, 2),
+                    'semestre_recomendado' => $i,
+                    'tipo' => 'obligatoria',
+                    'activo' => true
                 ]);
             }
         }
@@ -89,7 +97,9 @@ class DemoLightSeeder extends Seeder
                 'codigo' => "A{$i}",
                 'capacidad' => rand(30, 60),
                 'tipo' => ['teoria', 'laboratorio', 'auditorio'][rand(0, 2)],
-                'edificio' => "Edificio " . chr(64 + ($i % 5) + 1)
+                'edificio' => "Edificio " . chr(64 + ($i % 5) + 1),
+                'piso' => rand(1, 3),
+                'disponible' => true
             ]);
         }
         echo "✅ 20 aulas creadas\n";
@@ -103,14 +113,16 @@ class DemoLightSeeder extends Seeder
                 'nombres' => "Profesor{$i}",
                 'apellidos' => "Apellido{$i}",
                 'email' => "profesor{$i}@universidad.edu.ve",
-                'cedula' => str_pad($i + 10000000, 8, '0', STR_PAD_LEFT),
+                'cedula' => 'V-' . str_pad($i + 10000000, 8, '0', STR_PAD_LEFT),
                 'telefono' => '0414' . str_pad($i, 7, '0', STR_PAD_LEFT),
-                'fecha_nacimiento' => now()->subYears(rand(30, 60)),
+                'fecha_nacimiento' => now()->subYears(rand(30, 60))->format('Y-m-d'),
                 'genero' => ['M', 'F'][rand(0, 1)],
+                'direccion' => "Dirección del profesor {$i}",
                 'facultad_id' => $facultadesForProf[array_rand($facultadesForProf)],
                 'especialidad' => 'Especialidad ' . $i,
                 'titulo_academico' => ['Licenciado', 'Magister', 'Doctor'][rand(0, 2)],
-                'fecha_ingreso' => now()->subYears(rand(1, 20)),
+                'fecha_ingreso' => now()->subYears(rand(1, 20))->format('Y-m-d'),
+                'tipo_contrato' => 'tiempo_completo',
                 'estatus' => 'activo'
             ]);
         }
@@ -125,14 +137,17 @@ class DemoLightSeeder extends Seeder
                 'nombres' => "Estudiante{$i}",
                 'apellidos' => "Apellido{$i}",
                 'email' => "estudiante{$i}@universidad.edu.ve",
-                'cedula' => str_pad($i + 20000000, 8, '0', STR_PAD_LEFT),
+                'cedula' => 'V-' . str_pad($i + 20000000, 8, '0', STR_PAD_LEFT),
                 'telefono' => '0424' . str_pad($i, 7, '0', STR_PAD_LEFT),
-                'fecha_nacimiento' => now()->subYears(rand(18, 30)),
+                'fecha_nacimiento' => now()->subYears(rand(18, 30))->format('Y-m-d'),
                 'genero' => ['M', 'F'][rand(0, 1)],
+                'direccion' => "Dirección del estudiante {$i}",
                 'carrera_id' => $carrerasForEst[array_rand($carrerasForEst)],
                 'semestre_actual' => rand(1, 10),
-                'promedio' => rand(12, 20),
-                'fecha_ingreso' => now()->subYears(rand(1, 5)),
+                'indice_academico' => rand(12, 20),
+                'creditos_aprobados' => rand(0, 180),
+                'fecha_ingreso' => now()->subYears(rand(1, 5))->format('Y-m-d'),
+                'tipo_ingreso' => 'regular',
                 'estatus' => 'activo'
             ]);
             
@@ -151,15 +166,21 @@ class DemoLightSeeder extends Seeder
         
         for ($i = 0; $i < 50; $i++) {
             $materia = $materias->random();
+            $horaInicio = rand(7, 16);
+            $horaFin = $horaInicio + rand(2, 4);
+            
             Horario::create([
                 'materia_id' => $materia->id,
                 'profesor_id' => $profesores[array_rand($profesores)],
                 'aula_id' => $aulas[array_rand($aulas)],
                 'dia_semana' => $dias[rand(0, 4)],
-                'hora_inicio' => sprintf('%02d:00:00', rand(7, 16)),
-                'hora_fin' => sprintf('%02d:00:00', rand(9, 18)),
-                'periodo' => '2026-1',
-                'cupo_maximo' => rand(30, 50)
+                'hora_inicio' => sprintf('%02d:00:00', $horaInicio),
+                'hora_fin' => sprintf('%02d:00:00', $horaFin),
+                'periodo_academico' => '2026-1',
+                'seccion' => chr(65 + ($i % 5)),
+                'cupo_maximo' => rand(30, 50),
+                'cupos_disponibles' => rand(5, 30),
+                'activo' => true
             ]);
         }
         echo "✅ 50 horarios creados\n";
@@ -170,25 +191,32 @@ class DemoLightSeeder extends Seeder
         $horarios = Horario::pluck('id')->toArray();
         $estatusOpciones = ['inscrito', 'cursando'];
         
-        for ($i = 0; $i < 1000; $i++) {
+        $created = 0;
+        $attempts = 0;
+        $maxAttempts = 1500;
+        
+        while ($created < 1000 && $attempts < $maxAttempts) {
+            $attempts++;
             try {
                 Inscripcion::create([
                     'estudiante_id' => $estudiantes[array_rand($estudiantes)],
                     'horario_id' => $horarios[array_rand($horarios)],
-                    'periodo' => '2026-1',
+                    'periodo_academico' => '2026-1',
                     'estatus' => $estatusOpciones[array_rand($estatusOpciones)],
-                    'fecha_inscripcion' => now()->subDays(rand(1, 90))
+                    'fecha_inscripcion' => now()->subDays(rand(1, 90)),
+                    'nota_final' => null
                 ]);
+                $created++;
+                
+                if ($created % 200 == 0) {
+                    echo "  → {$created}/1000 inscripciones creadas\n";
+                }
             } catch (\Exception $e) {
-                // Ignorar duplicados
+                // Ignorar duplicados o errores de constraint
                 continue;
             }
-            
-            if ($i % 200 == 0 && $i > 0) {
-                echo "  → {$i}/1000 inscripciones creadas\n";
-            }
         }
-        echo "✅ 1000 inscripciones creadas\n";
+        echo "✅ {$created} inscripciones creadas\n";
         
         // RESUMEN
         echo "\n" . str_repeat('=', 60) . "\n";
@@ -201,7 +229,7 @@ class DemoLightSeeder extends Seeder
         echo "✅ Profesores: 100\n";
         echo "✅ Estudiantes: 500\n";
         echo "✅ Horarios: 50\n";
-        echo "✅ Inscripciones: ~1000\n";
+        echo "✅ Inscripciones: {$created}\n";
         echo str_repeat('=', 60) . "\n";
     }
 }
