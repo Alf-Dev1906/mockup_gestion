@@ -1,9 +1,9 @@
 # 🚀 Ejecutar Migraciones y Seeders SIN Shell de Render
 
-Ya que Render requiere plan pago para la Shell, usaremos endpoints temporales para ejecutar las migraciones y seeders.
+Ya que Render requiere plan pago para la Shell, usaremos un script PHP temporal para ejecutar las migraciones y seeders.
 
 ## ⚠️ IMPORTANTE
-Estos endpoints son TEMPORALES y DEBEN ser eliminados después de terminar el setup.
+Este script es TEMPORAL y DEBE ser eliminado después de terminar el setup.
 
 ---
 
@@ -14,28 +14,51 @@ Primero necesitamos subir el nuevo código a GitHub para que Render lo despliegu
 ```bash
 cd C:\Users\danie\Documents\Gestion_uni
 git add .
-git commit -m "feat: Add temporary setup endpoints for migrations without shell access"
+git commit -m "feat: Add setup.php script for migrations without shell access"
 git push origin main
 ```
 
-**Espera 5-10 minutos** para que Render re-despliegue automáticamente con los nuevos endpoints.
+**Espera 5-10 minutos** para que Render re-despliegue automáticamente.
 
 ---
 
-## Paso 2: Ejecutar Migraciones
+## Paso 2: Verificar que el Script Funciona
 
-Abre tu navegador y visita esta URL (reemplaza con tu URL de Render):
+Abre tu navegador y visita:
 
 ```
-https://gestion-uni-backend.onrender.com/api/setup/migrate
+https://gestion-uni-backend.onrender.com/setup.php
+```
+
+**Resultado esperado:**
+```json
+{
+  "message": "Script de Setup para Render",
+  "endpoints": {
+    "migrate": "?action=migrate",
+    "seed": "?action=seed&seeder=UserSeeder",
+    "verify": "?action=verify"
+  },
+  "seeders": [...]
+}
+```
+
+✅ Si ves este JSON, el script está funcionando.
+
+---
+
+## Paso 3: Ejecutar Migraciones
+
+```
+https://gestion-uni-backend.onrender.com/setup.php?action=migrate
 ```
 
 **Resultado esperado:**
 ```json
 {
   "success": true,
-  "message": "Migraciones ejecutadas exitosamente",
-  "output": "Migrating: 2014_10_12_000000_create_users_table\nMigrated: 2014_10_12_000000_create_users_table (85.12ms)\n..."
+  "message": "Migraciones ejecutadas",
+  "output": "Migrating: 2014_10_12_000000_create_users_table\nMigrated: ..."
 }
 ```
 
@@ -43,58 +66,57 @@ https://gestion-uni-backend.onrender.com/api/setup/migrate
 
 ---
 
-## Paso 3: Ejecutar Seeders
+## Paso 4: Ejecutar Seeders
 
 Abre estas URLs **UNA POR UNA** en tu navegador (espera a que termine cada una):
 
 ### Seeder 1: UserSeeder (5 segundos)
 ```
-https://gestion-uni-backend.onrender.com/api/setup/seed/UserSeeder
+https://gestion-uni-backend.onrender.com/setup.php?action=seed&seeder=UserSeeder
 ```
 
 ### Seeder 2: DemoSeeder (8-12 minutos ⏳)
 ```
-https://gestion-uni-backend.onrender.com/api/setup/seed/DemoSeeder
+https://gestion-uni-backend.onrender.com/setup.php?action=seed&seeder=DemoSeeder
 ```
-**⚠️ IMPORTANTE:** Este toma 8-12 minutos. NO cierres el navegador. La página dirá "Cargando..." hasta que termine.
+**⚠️ IMPORTANTE:** Este toma 8-12 minutos. NO cierres el navegador.
 
 ### Seeder 3: LinkDemoUsersSeeder (5 segundos)
 ```
-https://gestion-uni-backend.onrender.com/api/setup/seed/LinkDemoUsersSeeder
+https://gestion-uni-backend.onrender.com/setup.php?action=seed&seeder=LinkDemoUsersSeeder
 ```
 
 ### Seeder 4: SolicitudesYPagosSeeder (10 segundos)
 ```
-https://gestion-uni-backend.onrender.com/api/setup/seed/SolicitudesYPagosSeeder
+https://gestion-uni-backend.onrender.com/setup.php?action=seed&seeder=SolicitudesYPagosSeeder
 ```
 
 ### Seeder 5: PagosMockupSeeder (15 segundos)
 ```
-https://gestion-uni-backend.onrender.com/api/setup/seed/PagosMockupSeeder
+https://gestion-uni-backend.onrender.com/setup.php?action=seed&seeder=PagosMockupSeeder
 ```
 
 ### Seeder 6: CalificacionesMockupSeeder (20 segundos)
 ```
-https://gestion-uni-backend.onrender.com/api/setup/seed/CalificacionesMockupSeeder
+https://gestion-uni-backend.onrender.com/setup.php?action=seed&seeder=CalificacionesMockupSeeder
 ```
 
 ### Seeder 7: ProfesorDemoDataSeeder (30 segundos)
 ```
-https://gestion-uni-backend.onrender.com/api/setup/seed/ProfesorDemoDataSeeder
+https://gestion-uni-backend.onrender.com/setup.php?action=seed&seeder=ProfesorDemoDataSeeder
 ```
 
 ### Seeder 8: EstudianteDemoDataSeeder (30 segundos)
 ```
-https://gestion-uni-backend.onrender.com/api/setup/seed/EstudianteDemoDataSeeder
+https://gestion-uni-backend.onrender.com/setup.php?action=seed&seeder=EstudianteDemoDataSeeder
 ```
 
 ---
 
-## Paso 4: Verificar que Todo Funcionó
+## Paso 5: Verificar que Todo Funcionó
 
-Abre esta URL:
 ```
-https://gestion-uni-backend.onrender.com/api/setup/verify
+https://gestion-uni-backend.onrender.com/setup.php?action=verify
 ```
 
 **Resultado esperado:**
@@ -115,25 +137,19 @@ https://gestion-uni-backend.onrender.com/api/setup/verify
 
 ---
 
-## Paso 5: ELIMINAR los Endpoints Temporales
+## Paso 6: ELIMINAR el Script Temporal
 
-**⚠️ MUY IMPORTANTE:** Una vez terminado el setup, DEBES eliminar estos endpoints por seguridad.
+**⚠️ MUY IMPORTANTE:** Una vez terminado el setup, DEBES eliminar este script por seguridad.
 
 ```bash
 cd C:\Users\danie\Documents\Gestion_uni\backend
-rm routes/setup.php
-```
-
-Luego edita `routes/api.php` y elimina esta línea:
-```php
-// ⚠️ RUTAS TEMPORALES DE SETUP - BORRAR DESPUÉS DE MIGRACIONES
-require __DIR__ . '/setup.php';
+rm public/setup.php
 ```
 
 Guarda los cambios y haz push:
 ```bash
 git add .
-git commit -m "chore: Remove temporary setup endpoints"
+git commit -m "chore: Remove temporary setup script"
 git push origin main
 ```
 
