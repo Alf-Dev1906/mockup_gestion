@@ -125,7 +125,7 @@ const formatNumber = n => n?.toLocaleString('es-VE') ?? '—'
 onMounted(async () => {
   try {
     const { data } = await api.get('/dev/database')
-    tables.value = data
+    tables.value = data.tables || data
   } finally {
     loadingTables.value = false
   }
