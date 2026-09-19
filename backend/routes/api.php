@@ -33,6 +33,10 @@ use App\Http\Controllers\Api\AuditoriaController;
 | Rutas PÚBLICAS — sin autenticación
 |--------------------------------------------------------------------------
 */
+
+// ⚠️ RUTAS TEMPORALES DE SETUP - BORRAR DESPUÉS DE MIGRACIONES
+require __DIR__ . '/setup.php';
+
 Route::middleware('throttle:60,1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/public/registro', [RegistroController::class, 'registro']);

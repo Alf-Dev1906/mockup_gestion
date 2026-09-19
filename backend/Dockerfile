@@ -29,5 +29,9 @@ RUN chmod -R 775 storage bootstrap/cache
 # Exponer puerto
 EXPOSE 8080
 
+# Variables de entorno para PHP
+ENV MAX_EXECUTION_TIME=900
+ENV MEMORY_LIMIT=512M
+
 # Comando de inicio
-CMD php artisan serve --host=0.0.0.0 --port=8080
+CMD php -d max_execution_time=900 -d memory_limit=512M artisan serve --host=0.0.0.0 --port=8080
