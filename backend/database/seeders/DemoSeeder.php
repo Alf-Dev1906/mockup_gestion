@@ -178,13 +178,20 @@ class DemoSeeder extends Seeder
         }
 
         $faker = \Faker\Factory::create('es_VE');
-        $carreras = DB::table('carreras')->pluck('id')->toArray();
+        $facultades = DB::table('facultades')->pluck('id')->toArray();
+        
+        if (empty($facultades)) {
+            echo "   ⚠️  No hay facultades, omitiendo profesores\n";
+            return;
+        }
+
         $toCreate = $count - $existingCount;
 
         for ($i = 0; $i < $toCreate; $i++) {
             DB::table('profesores')->insert([
-                'nombres' => $faker->firstName(),
-                'apellidos' => $faker->lastName() . ' ' . $faker->lastName(),
+                'facultad_id' => $faker->randomElement($facultades),
+                'nombre' => $faker->firstName(),
+                'apellido' => $faker->lastName() . ' ' . $faker->lastName(),
                 'cedula' => 'V-' . $faker->unique()->numberBetween(10000000, 30000000),
                 'email' => $faker->unique()->safeEmail(),
                 'telefono' => $faker->phoneNumber(),
@@ -253,19 +260,26 @@ class DemoSeeder extends Seeder
 
         $faker = \Faker\Factory::create('es_VE');
         $carreras = DB::table('carreras')->pluck('id')->toArray();
+        
+        if (empty($carreras)) {
+            echo "   ⚠️  No hay carreras, omitiendo estudiantes\n";
+            return;
+        }
+
         $toCreate = $count - $existingCount;
 
         for ($i = 0; $i < $toCreate; $i++) {
             DB::table('estudiantes')->insert([
-                'nombres' => $faker->firstName(),
-                'apellidos' => $faker->lastName() . ' ' . $faker->lastName(),
+                'nombre' => $faker->firstName(),
+                'apellido' => $faker->lastName() . ' ' . $faker->lastName(),
                 'cedula' => 'V-' . $faker->unique()->numberBetween(20000000, 30000000),
                 'email' => $faker->unique()->safeEmail(),
                 'telefono' => $faker->phoneNumber(),
                 'fecha_nacimiento' => $faker->dateTimeBetween('-25 years', '-17 years'),
                 'genero' => $faker->randomElement(['M', 'F']),
                 'carrera_id' => $faker->randomElement($carreras),
-                'cohorte' => $faker->randomElement(['2024-1', '2024-2', '2025-1']),
+                'matricula' => 'EST-' . str_pad($existingCount + $i + 20000, 6, '0', STR_PAD_LEFT),
+                'fecha_ingreso' => $faker->dateTimeBetween('-4 years', '-1 year'),
                 'semestre_actual' => $faker->numberBetween(1, 8),
                 'indice_academico' => $faker->randomFloat(2, 12, 20),
                 'creditos_aprobados' => $faker->numberBetween(0, 120),
