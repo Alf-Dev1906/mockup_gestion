@@ -77,6 +77,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import AdminLayout from '@/layouts/AdminLayout.vue'
+import ConfigSection from '@/components/ConfigSection.vue'
 import api from '@/services/api'
 import { useToast } from '@/composables/useToast'
 

@@ -55,28 +55,75 @@ class DesarrolladorController extends Controller
     {
         Gate::authorize('acceso-base-datos');
 
-        $tables = DB::select('SHOW TABLES');
-        $databaseName = DB::getDatabaseName();
+        $driver = DB::getDriverName();
+        
+        // Obtener tablas según el driver
+        if ($driver === 'pgsql') {
+            $tables = DB::select("
+                SELECT tablename as table_name 
+                FROM pg_catalog.pg_tables 
+                WHERE schemaname = 'public'
+                ORDER BY tablename
+            ");
+        } else {
+            // MySQL/MariaDB
+            $tables = DB::select('SHOW TABLES');
+            $databaseName = DB::getDatabaseName();
+        }
 
         $result = [];
+        
         foreach ($tables as $table) {
-            $tableName = $table->{"Tables_in_$databaseName"};
-            $count = DB::table($tableName)->count();
-            $size = DB::select("
-                SELECT 
-                    ROUND(((data_length + index_length) / 1024 / 1024), 2) AS size_mb
-                FROM information_schema.TABLES 
-                WHERE table_schema = ? AND table_name = ?
-            ", [$databaseName, $tableName]);
+            // Obtener nombre de tabla según driver
+            if ($driver === 'pgsql') {
+                $tableName = $table->table_name;
+            } else {
+                $databaseName = DB::getDatabaseName();
+                $tableName = $table->{"Tables_in_$databaseName"};
+            }
+            
+            try {
+                $count = DB::table($tableName)->count();
+            } catch (\Exception $e) {
+                $count = -1;
+            }
+            
+            // Obtener tamaño según driver
+            if ($driver === 'pgsql') {
+                $sizeQuery = DB::select("
+                    SELECT pg_size_pretty(pg_total_relation_size(?::regclass)) as size_pretty,
+                           pg_total_relation_size(?::regclass) as size_bytes
+                ", [$tableName, $tableName]);
+                
+                $sizeMB = isset($sizeQuery[0]) ? round($sizeQuery[0]->size_bytes / 1024 / 1024, 2) : 0;
+                $sizePretty = $sizeQuery[0]->size_pretty ?? '0 bytes';
+            } else {
+                $sizeQuery = DB::select("
+                    SELECT 
+                        ROUND(((data_length + index_length) / 1024 / 1024), 2) AS size_mb
+                    FROM information_schema.TABLES 
+                    WHERE table_schema = ? AND table_name = ?
+                ", [$databaseName, $tableName]);
+                
+                $sizeMB = $sizeQuery[0]->size_mb ?? 0;
+                $sizePretty = $sizeMB . ' MB';
+            }
 
             $result[] = [
                 'name' => $tableName,
                 'rows' => $count,
-                'size_mb' => $size[0]->size_mb ?? 0,
+                'size_mb' => $sizeMB,
+                'size_pretty' => $sizePretty,
+                'error' => $count === -1 ? 'No se puede acceder' : null,
             ];
         }
 
-        return response()->json($result);
+        return response()->json([
+            'driver' => $driver,
+            'database' => DB::getDatabaseName(),
+            'tables' => $result,
+            'total_tables' => count($result),
+        ]);
     }
 
     /**
@@ -90,7 +137,7 @@ class DesarrolladorController extends Controller
             'query' => 'required|string',
         ]);
 
-        $query = $request->query;
+        $query = $request->input('query');
 
         // Log de seguridad
         SecurityLogService::logCommandExecution(
@@ -388,19 +435,46 @@ class DesarrolladorController extends Controller
 
     private function getDatabaseSize(): string
     {
-        $database = DB::getDatabaseName();
-        $result = DB::select("
-            SELECT 
-                ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size_mb
-            FROM information_schema.TABLES 
-            WHERE table_schema = ?
-        ", [$database]);
+        $driver = DB::getDriverName();
+        
+        if ($driver === 'pgsql') {
+            $database = DB::getDatabaseName();
+            $result = DB::select("
+                SELECT pg_size_pretty(pg_database_size(?)) as size_pretty
+            ", [$database]);
+            
+            return $result[0]->size_pretty ?? '0 bytes';
+        } else {
+            // MySQL/MariaDB
+            $database = DB::getDatabaseName();
+            $result = DB::select("
+                SELECT 
+                    ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size_mb
+                FROM information_schema.TABLES 
+                WHERE table_schema = ?
+            ", [$database]);
 
-        return ($result[0]->size_mb ?? 0) . ' MB';
+            return ($result[0]->size_mb ?? 0) . ' MB';
+        }
     }
 
     private function getTablesInfo(): int
     {
+        $driver = DB::getDriverName();
+        
+        if ($driver === 'pgsql') {
+            $result = DB::select("
+                SELECT COUNT(*) as count
+                FROM pg_catalog.pg_tables 
+                WHERE schemaname = 'public'
+            ");
+            return $result[0]->count ?? 0;
+        } else {
+            // MySQL/MariaDB
+            $result = DB::select("SHOW TABLES");
+            return count($result);
+        }
+    }
         $database = DB::getDatabaseName();
         $tables = DB::select('SHOW TABLES');
         return count($tables);
