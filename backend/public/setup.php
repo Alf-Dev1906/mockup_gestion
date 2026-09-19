@@ -36,6 +36,7 @@ try {
             $allowedSeeders = [
                 'UserSeeder',
                 'DemoSeeder',  // Ya está optimizado: 60 estudiantes, 50 profesores
+                'QuickDemoSeeder',  // Nuevo: dividido en partes
                 'LinkDemoUsersSeeder',
                 'SolicitudesYPagosSeeder',
                 'PagosMockupSeeder',
