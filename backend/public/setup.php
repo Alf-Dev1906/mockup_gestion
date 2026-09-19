@@ -36,6 +36,7 @@ try {
             $allowedSeeders = [
                 'UserSeeder',
                 'DemoSeeder',
+                'DemoLightSeeder',  // Nueva versión ligera
                 'LinkDemoUsersSeeder',
                 'SolicitudesYPagosSeeder',
                 'PagosMockupSeeder',
