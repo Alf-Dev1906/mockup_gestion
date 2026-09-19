@@ -21,8 +21,8 @@ COPY backend/ /app/backend/
 # Copiar .env.example desde backend
 RUN cp .env.example .env || true
 
-# Instalar dependencias de PHP
-RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+# Instalar dependencias de PHP (con dev para Faker)
+RUN composer install --optimize-autoloader --ignore-platform-reqs
 
 # Generar key
 RUN php artisan key:generate || true
