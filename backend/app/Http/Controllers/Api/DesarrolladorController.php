@@ -475,10 +475,6 @@ class DesarrolladorController extends Controller
             return count($result);
         }
     }
-        $database = DB::getDatabaseName();
-        $tables = DB::select('SHOW TABLES');
-        return count($tables);
-    }
 
     private function getDiskUsage(): array
     {
