@@ -7,9 +7,9 @@ echo "🚀 Iniciando aplicación Laravel..."
 echo "📦 Ejecutando migraciones..."
 php artisan migrate --force
 
-# Ejecutar seeders
-echo "🌱 Ejecutando seeders..."
-php artisan db:seed --force
+# Ejecutar seeder ligero para producción (evita timeout)
+echo "🌱 Ejecutando seeder de demo (versión ligera)..."
+php artisan db:seed --class=DemoSeeder --force
 
 # Limpiar cache
 echo "🧹 Limpiando cache..."
