@@ -100,7 +100,7 @@ class SoporteController extends Controller
 
         // Agregar info adicional según rol
         if ($usuario->isEstudiante()) {
-            $estudiante = \App\Models\Estudiante::where('user_id', $usuario->id)->first();
+            $estudiante = \App\Models\Estudiante::where('email', $usuario->email)->first();
             if ($estudiante) {
                 $data['estudiante'] = [
                     'id' => $estudiante->id,
@@ -112,7 +112,7 @@ class SoporteController extends Controller
         }
 
         if ($usuario->isProfesor()) {
-            $profesor = \App\Models\Profesor::where('user_id', $usuario->id)->first();
+            $profesor = \App\Models\Profesor::where('email', $usuario->email)->first();
             if ($profesor) {
                 $data['profesor'] = [
                     'id' => $profesor->id,

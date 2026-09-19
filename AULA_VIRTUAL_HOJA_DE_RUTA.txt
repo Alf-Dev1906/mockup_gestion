@@ -1,0 +1,1133 @@
+﻿==================================================================
+   HOJA DE RUTA - MODULO DE AULA VIRTUAL
+   Sistema de Gestion Universitaria
+   Stack: Laravel 11 + Vue 3 + Tailwind CSS + Pinia + MySQL
+==================================================================
+
+MODELOS DISPONIBLES Y SU ROL EN ESTE PROYECTO
+----------------------------------------------
+
+  NOTA CRITICA: Deepseek v3.2, MiniMax M2.5, MiniMax M2.1 y GLM-5
+  NO soportan imagenes ni adjuntos visuales. En sesiones de trabajo
+  real donde se comparten capturas de pantalla con errores, estos
+  modelos no pueden participar. Por esa razon han sido REMOVIDOS
+  del plan de ejecucion y sus tareas reasignadas.
+
+  MODELOS ACTIVOS EN ESTE PROYECTO:
+
+  Claude Sonnet 4.5  (1.3x) - EL QUE ESTAMOS USANDO AHORA
+    Soporta imagenes: SI
+    Rol: Director tecnico del proyecto. Coordinacion general,
+    integracion entre bloques, revision de consistencia y
+    todas las decisiones arquitectonicas de alto nivel.
+    Recibe capturas de errores, consola del navegador y
+    logs del servidor para diagnosticar problemas.
+    Cuando usarlo: sesiones principales, integracion entre
+    bloques, errores que requieren ver imagen de pantalla,
+    cualquier cambio en archivos criticos existentes.
+
+  Claude Sonnet 4    (1.3x)
+    Soporta imagenes: SI
+    Rol: Alternativa identica a Sonnet 4.5. Mismo nivel de
+    capacidad para codigo, arquitectura y analisis visual.
+    Usar si Sonnet 4.5 no esta disponible.
+
+  Claude Haiku 4.5   (0.4x)
+    Soporta imagenes: SI
+    Rol: Caballo de trabajo del proyecto. Cubre TODO lo que
+    antes se asignaba a Deepseek, MiniMax y GLM-5 pero con
+    la ventaja de soportar imagenes.
+    Casos de uso:
+      - Logica de backend: esquemas BD, algoritmos, validaciones
+      - Logica Vue 3 reactiva: composables, Pinia stores, eventos
+      - Cualquier tarea de codigo que no requiera conocer el
+        sistema existente completo
+      - Cuando el usuario comparte una imagen y la tarea es
+        moderadamente compleja pero no critica para la integracion
+
+  Qwen3 Coder Next   (0.05x)
+    Soporta imagenes: NO
+    Rol: Generador de codigo repetitivo con esquema ya definido.
+    Migraciones PHP, componentes Tailwind estaticos, tablas HTML,
+    formularios simples. Solo se usa cuando la tarea es 100%
+    transcripcion de un esquema o patron ya escrito.
+    IMPORTANTE: No pasarle imagenes. Solo texto e instrucciones.
+    Cuando NO usarlo: si hay ambiguedad en los requisitos,
+    si el codigo debe integrarse con archivos existentes,
+    si el usuario puede necesitar compartir una captura.
+
+
+DIRECTRIZ GENERAL DE USO DE MODELOS (ACTUALIZADA)
+---------------------------------------------------
+
+  NUEVA JERARQUIA (3 niveles activos):
+
+    NIVEL 1 - Claude Sonnet 4.5 / Sonnet 4  (1.3x)
+      Cuando: integracion con sistema existente, errores complejos,
+      decisiones de diseno, el usuario comparte imagen de error,
+      cambios en archivos criticos (api.php, router, AdminLayout).
+
+    NIVEL 2 - Claude Haiku 4.5  (0.4x)
+      Cuando: logica nueva de backend o frontend que no toca
+      archivos existentes, esquemas de BD, algoritmos, stores
+      Pinia, composables, el usuario puede compartir imagen.
+
+    NIVEL 3 - Qwen3 Coder Next  (0.05x)
+      Cuando: la especificacion esta 100% definida en texto,
+      es codigo repetitivo (migraciones, maquetado Tailwind),
+      y NO se esperan imagenes en la sesion.
+
+  REGLA PRACTICA:
+    Si en alguna parte de la sesion el usuario podria necesitar
+    compartir una captura de pantalla -> usar minimo Haiku 4.5.
+    Si la tarea es "toma este esquema y escribe el archivo PHP"
+    sin posibilidad de imagenes -> Qwen3 Coder Next esta bien.
+
+  MODELOS DESCARTADOS Y POR QUE:
+    Deepseek v3.2  -> Sin soporte de imagenes. Reemplazado por Haiku 4.5
+    MiniMax M2.5   -> Sin soporte de imagenes + capacidad limitada
+    MiniMax M2.1   -> Sin soporte de imagenes + capacidad limitada
+    GLM-5          -> Sin soporte de imagenes + costo no justificado
+
+
+MODELOS EXISTENTES (REFERENCIA OBLIGATORIA EN TODO EL PROYECTO)
+----------------------------------------------------------------
+
+  Los siguientes modelos Eloquent ya existen y DEBEN respetarse.
+  Ningun bloque nuevo puede romper estas relaciones.
+
+  Estudiante
+    - carrera_id, cedula, nombre, apellido, email
+    - matricula, semestre_actual, indice_academico
+    - creditos_aprobados, estatus
+    - Relaciones: belongsTo(Carrera), hasMany(Inscripcion)
+    - belongsToMany(Horario) via inscripciones
+
+  Inscripcion
+    - estudiante_id, horario_id, periodo_academico
+    - estatus, nota_parcial_1/2/3, nota_final
+    - inasistencias, porcentaje_asistencia
+    - Relaciones: belongsTo(Estudiante), belongsTo(Horario)
+    - hasOne(Calificacion)
+
+  Horario
+    - materia_id, profesor_id, aula_id
+    - seccion, periodo_academico, dia_semana
+    - hora_inicio, hora_fin, cupo_maximo, cupo_actual
+    - Relaciones: belongsTo(Materia/Profesor/Aula)
+    - hasMany(Inscripcion), belongsToMany(Estudiante)
+
+  Profesor
+    - facultad_id, cedula, codigo_empleado
+    - categoria, especialidad, titulo_academico
+    - Relaciones: belongsTo(Facultad), hasMany(Horario)
+
+  PUNTO CRITICO: El Aula Virtual se integra a traves de
+  Horario (que ya tiene seccion y profesor_id). Cada examen,
+  tarea y lista de asistencia pertenece a un horario_id.
+  Nunca a una materia_id directamente.
+
+
+==================================================================
+   BLOQUE 1 - BASE DE DATOS Y MIGRACIONES
+==================================================================
+
+DESCRIPCION
+  Crear todas las tablas nuevas del Aula Virtual. Este bloque es
+  la base de todo lo demas. Si las tablas estan mal, todo lo que
+  venga despues estara mal.
+
+PASO 1.1 - Disenar el esquema relacional completo
+  Modelo: Claude Haiku 4.5 (0.4x)
+  Por que: Razonamiento arquitectonico puro de BD. Haiku 4.5
+  reemplaza a Deepseek para esta tarea porque soporta imagenes
+  (el usuario puede compartir capturas del esquema actual) y
+  tiene capacidad suficiente para definir relaciones FK,
+  onDelete('cascade'), indices compuestos y restricciones UNIQUE.
+  Deepseek fue descartado por no soportar imagenes.
+
+  Tablas nuevas a crear:
+
+    quizzes
+      - id, horario_id (FK->horarios), titulo, descripcion
+      - tipo (quiz/examen/practica)
+      - instrucciones TEXT
+      - duracion_minutos INT
+      - intentos_permitidos INT default 1
+      - advertencias_max INT default 3
+      - fecha_inicio DATETIME, fecha_fin DATETIME
+      - visible_desde DATETIME
+      - estado ENUM(borrador, publicado, cerrado)
+      - orden_aleatorio BOOL default false
+      - mostrar_resultado_inmediato BOOL default true
+      - created_by (FK->users)
+      - timestamps
+
+    quiz_questions
+      - id, quiz_id (FK->quizzes, cascade)
+      - orden INT
+      - tipo ENUM(seleccion, verdadero_falso, relacion_columnas,
+                  espacios, multimedia)
+      - enunciado TEXT
+      - contenido JSON   <- toda la logica del tipo de pregunta
+      - puntos DECIMAL(5,2)
+      - obligatoria BOOL default true
+      - retroalimentacion TEXT nullable
+      - archivo_url VARCHAR nullable (para multimedia)
+      - timestamps
+
+    quiz_attempts
+      - id, quiz_id (FK->quizzes, cascade)
+      - estudiante_id (FK->estudiantes, cascade)
+      - inscripcion_id (FK->inscripciones)
+      - estado ENUM(en_progreso, enviado, calificado, anulado)
+      - inicio_at DATETIME, fin_at DATETIME nullable
+      - tiempo_restante_seg INT
+      - nota_obtenida DECIMAL(5,2) nullable
+      - nota_maxima DECIMAL(5,2)
+      - ip_address VARCHAR
+      - user_agent TEXT
+      - advertencias_count INT default 0
+      - auto_enviado BOOL default false
+      - timestamps
+      - UNIQUE(quiz_id, estudiante_id) cuando intentos=1
+
+    quiz_answers
+      - id, attempt_id (FK->quiz_attempts, cascade)
+      - question_id (FK->quiz_questions, cascade)
+      - respuesta JSON   <- respuesta del alumno en formato libre
+      - es_correcta BOOL nullable
+      - puntos_obtenidos DECIMAL(5,2) nullable
+      - archivo_url VARCHAR nullable
+      - timestamps
+
+    exam_incidents
+      - id, attempt_id (FK->quiz_attempts, cascade)
+      - tipo ENUM(cambio_pestana, perdida_foco, pantalla_completa,
+                  advertencia_enviada, auto_submit)
+      - descripcion VARCHAR
+      - metadata JSON nullable (datos extra del evento)
+      - ocurrido_at DATETIME
+      - timestamps
+
+    attendances
+      - id, horario_id (FK->horarios)
+      - estudiante_id (FK->estudiantes)
+      - inscripcion_id (FK->inscripciones)
+      - session_date DATE
+      - codigo_usado VARCHAR(10)
+      - verificado_at DATETIME
+      - ip_address VARCHAR
+      - estatus ENUM(presente, ausente, tardanza, justificado)
+      - observacion VARCHAR nullable
+      - timestamps
+      - UNIQUE(horario_id, estudiante_id, session_date)
+        [CRITICO: esta restriccion hace la asistencia inmutable]
+
+    attendance_sessions
+      - id, horario_id (FK->horarios)
+      - profesor_id (FK->profesores)
+      - session_date DATE
+      - codigo_dinamico VARCHAR(10)
+      - codigo_expira_at DATETIME
+      - abierta BOOL default true
+      - cierre_automatico_at DATETIME nullable
+      - total_presentes INT default 0
+      - timestamps
+      - UNIQUE(horario_id, session_date)
+
+    assignments
+      - id, horario_id (FK->horarios)
+      - titulo VARCHAR
+      - descripcion TEXT
+      - instrucciones TEXT nullable
+      - archivo_guia_url VARCHAR nullable
+      - fecha_apertura DATETIME
+      - fecha_limite DATETIME
+      - permitir_entrega_tardia BOOL default false
+      - peso_calificacion DECIMAL(5,2)
+      - nota_maxima DECIMAL(5,2) default 20
+      - tipos_permitidos VARCHAR default 'pdf,zip,docx'
+      - tamano_maximo_mb INT default 10
+      - estatus ENUM(borrador, publicado, cerrado)
+      - timestamps
+
+    submissions
+      - id, assignment_id (FK->assignments, cascade)
+      - estudiante_id (FK->estudiantes)
+      - inscripcion_id (FK->inscripciones)
+      - archivo_url VARCHAR
+      - nombre_archivo_original VARCHAR
+      - tamano_bytes INT
+      - es_tardia BOOL default false
+      - nota DECIMAL(5,2) nullable
+      - retroalimentacion TEXT nullable
+      - calificado_at DATETIME nullable
+      - calificado_por (FK->users) nullable
+      - timestamps
+      - UNIQUE(assignment_id, estudiante_id)
+
+    notifications
+      - id, user_id (FK->users, cascade)
+      - tipo VARCHAR(50)
+      - titulo VARCHAR
+      - mensaje TEXT
+      - url_accion VARCHAR nullable
+      - leida BOOL default false
+      - leida_at DATETIME nullable
+      - datos JSON nullable
+      - timestamps
+      - INDEX(user_id, leida)   <- critico para rendimiento
+
+PASO 1.2 - Generar archivos de migracion PHP
+  Modelo: Qwen3 Coder Next (0.05x)
+  Por que: Con el esquema ya definido por Haiku 4.5 en el paso
+  anterior, Qwen3 transcribe fielmente la estructura en archivos
+  .php de Laravel con ->foreignId()->constrained()->cascadeOnDelete()
+  La especificacion llega en texto puro, sin necesidad de imagenes.
+
+  Convencion de nombres de archivos:
+    2026_01_01_000010_create_quizzes_table.php
+    2026_01_01_000011_create_quiz_questions_table.php
+    2026_01_01_000012_create_quiz_attempts_table.php
+    2026_01_01_000013_create_quiz_answers_table.php
+    2026_01_01_000014_create_exam_incidents_table.php
+    2026_01_01_000015_create_attendances_table.php
+    2026_01_01_000016_create_attendance_sessions_table.php
+    2026_01_01_000017_create_assignments_table.php
+    2026_01_01_000018_create_submissions_table.php
+    2026_01_01_000019_create_notifications_table.php
+
+  NOTA: Respetar el orden. Las tablas con FK deben migrarse
+  despues de las tablas a las que apuntan.
+
+PASO 1.3 - Crear modelos Eloquent Laravel
+  Modelo: Claude Sonnet 4.5 (nosotros, 1.3x)
+  Por que: Los modelos deben integrarse con el sistema existente.
+  Sonnet 4.5 conoce los modelos actuales (Estudiante, Horario,
+  Inscripcion) y puede escribir las relaciones correctamente
+  sin romper nada.
+
+  Modelos a crear:
+    Quiz.php, QuizQuestion.php, QuizAttempt.php
+    QuizAnswer.php, ExamIncident.php
+    Attendance.php, AttendanceSession.php
+    Assignment.php, Submission.php, Notification.php
+
+  Cada modelo incluye:
+    -  completo
+    -  apropiados (JSON para columnas JSON)
+    - Relaciones Eloquent
+    - Scopes de consulta frecuente
+
+PASO 1.4 - Verificacion y php artisan migrate
+  Modelo: Claude Sonnet 4.5 (nosotros)
+  Ejecutar migracion, verificar en la BD que todas las
+  restricciones UNIQUE y FK quedaron bien aplicadas.
+  Corregir cualquier error de orden o tipo de dato.
+
+GASTO ESTIMADO BLOQUE 1: ~0.35x creditos
+
+
+==================================================================
+   BLOQUE 2 - MOTOR DE EXAMENES DINAMICOS (JSON Engine)
+==================================================================
+
+DESCRIPCION
+  El corazon del Aula Virtual. Un sistema que permite al profesor
+  crear examenes con 5 tipos de preguntas distintas. Las respuestas
+  correctas y la logica de calificacion viven en la columna JSON
+  de quiz_questions. Esto hace el sistema extensible sin nuevas
+  migraciones.
+
+PASO 2.1 - Disenar el contrato JSON para cada tipo de pregunta
+  Modelo: Claude Haiku 4.5 (0.4x)
+  Por que: Disenar estructuras JSON anidadas que soporten 5 tipos
+  distintos con campos condicionales requiere abstraccion de datos
+  precisa. Haiku 4.5 cubre esta tarea con solvencia y ademas puede
+  recibir capturas si el usuario necesita mostrar un ejemplo visual
+  de como se veria una pregunta en pantalla.
+
+  TIPO 1 - Seleccion Multiple (una o varias correctas)
+    contenido: {
+      "opciones": [
+        {"id": "a", "texto": "...", "es_correcta": true},
+        {"id": "b", "texto": "...", "es_correcta": false}
+      ],
+      "permite_multiple": false
+    }
+    respuesta estudiante: {"seleccionadas": ["a"]}
+
+  TIPO 2 - Verdadero/Falso con justificacion obligatoria
+    contenido: {
+      "afirmacion": "El agua hierve a 100 grados C al nivel del mar",
+      "respuesta_correcta": true,
+      "justificacion_requerida": true,
+      "puntos_justificacion": 2.0
+    }
+    respuesta estudiante: {
+      "valor": true,
+      "justificacion": "Porque a esa presion..."
+    }
+
+  TIPO 3 - Relacion de columnas (emparejamiento)
+    contenido: {
+      "columna_a": [
+        {"id": "1", "texto": "Termino A"}
+      ],
+      "columna_b": [
+        {"id": "x", "texto": "Definicion X"}
+      ],
+      "pares_correctos": [{"a": "1", "b": "x"}],
+      "mezclar_columna_b": true
+    }
+    respuesta estudiante: {"pares": [{"a": "1", "b": "x"}]}
+
+  TIPO 4 - Llenado de espacios
+    contenido: {
+      "plantilla": "El __ de Venezuela es Caracas",
+      "espacios": [
+        {"id": 1, "respuestas_validas": ["capital", "Capital"],
+         "sensible_mayusculas": false}
+      ]
+    }
+    respuesta estudiante: {"respuestas": {"1": "capital"}}
+
+  TIPO 5 - Multimedia con entrega de archivo
+    contenido: {
+      "descripcion": "Analiza el siguiente diagrama...",
+      "archivo_adjunto_url": "/storage/quizzes/img.png",
+      "tipo_adjunto": "imagen",
+      "extensiones_respuesta_permitidas": ["pdf", "zip"],
+      "tamano_max_mb": 5,
+      "calificacion_manual": true
+    }
+    respuesta estudiante: {"archivo_url": "/storage/answers/x.pdf"}
+
+PASO 2.2 - Backend: Controladores y Rutas API
+  Modelo: Claude Sonnet 4.5 (nosotros, 1.3x)
+  Por que: Los controladores deben integrarse con el sistema de
+  roles existente (middleware role:profesor / role:estudiante)
+  y reutilizar los patrones de respuesta {success, data} ya
+  establecidos en ProfesorDashboardController.
+
+  Controladores a crear:
+    QuizController.php         (CRUD de examenes, profesor)
+    QuizAttemptController.php  (inicio/envio de intento, estudiante)
+    QuizResultController.php   (resultados y calificacion automatica)
+
+  Rutas nuevas en api.php:
+    [profesor]
+      GET    /profesor/quizzes
+      POST   /profesor/quizzes
+      GET    /profesor/quizzes/{id}
+      PUT    /profesor/quizzes/{id}
+      DELETE /profesor/quizzes/{id}
+      GET    /profesor/quizzes/{id}/resultados
+      GET    /profesor/quizzes/{id}/preguntas
+      POST   /profesor/quizzes/{id}/preguntas
+      PUT    /profesor/preguntas/{id}
+      DELETE /profesor/preguntas/{id}
+
+    [estudiante]
+      GET  /estudiante/quizzes
+      GET  /estudiante/quizzes/{id}
+      POST /estudiante/quizzes/{id}/iniciar
+      POST /estudiante/quizzes/{id}/responder
+      POST /estudiante/quizzes/{id}/enviar
+      GET  /estudiante/quizzes/{id}/resultado
+
+  Logica critica del intento:
+    - Al iniciar: crear quiz_attempt con tiempo_restante_seg
+    - Al responder: guardar en quiz_answers, no cerrar el intento
+    - Al enviar: calcular nota_obtenida, marcar estado=calificado
+    - Si tiempo_restante_seg <= 0: auto-submit desde backend
+
+PASO 2.3 - Calificacion automatica
+  Modelo: Claude Haiku 4.5 (0.4x)
+  Por que: El algoritmo de calificacion por tipo de pregunta
+  requiere logica exacta: comparar arrays para seleccion,
+  comparar pares sin importar orden para columnas, normalizar
+  strings para espacios, bool + texto para V/F. Haiku 4.5
+  maneja esta logica correctamente y puede recibir capturas
+  si hay que mostrar un caso de prueba visual.
+
+  Servicio a crear: QuizGraderService.php
+    Metodo grade(QuizAttempt ): float
+    Metodo gradeQuestion(QuizQuestion , ): float
+
+PASO 2.4 - Vista Docente: Creador de Examenes
+  Modelo: Claude Haiku 4.5 (0.4x) para logica reactiva
+  Modelo: Qwen3 Coder Next (0.05x) para maquetado
+  
+  Archivo: frontend/src/views/profesor/QuizCreador.vue
+  Archivo: frontend/src/views/profesor/QuizResultados.vue
+
+  El creador tiene:
+    - Paso 1: Info general (titulo, duracion, fechas, configuracion)
+    - Paso 2: Agregar preguntas (selector de tipo, editor dinamico)
+    - Paso 3: Vista previa (modo simulacion sin guardar en BD)
+    - Publicar / Guardar borrador
+
+  DIRECTRIZ IMPORTANTE: El modo "Vista Previa" del docente
+  NO debe llamar a los endpoints de inicio de intento. Debe
+  renderizar localmente con un flag is_preview=true para
+  NO generar registros de auditoria.
+
+PASO 2.5 - Vista Estudiante: Pantalla de Examen
+  Modelo: Claude Haiku 4.5 (0.4x)
+  
+  Archivo: frontend/src/views/estudiante/QuizExamen.vue
+
+  La pantalla de examen incluye:
+    - Timer regresivo (Pinia store: useExamStore)
+    - Sidebar con lista de preguntas y estado (respondida/pendiente)
+    - Renderizador dinamico por tipo de pregunta
+    - Boton de envio con confirmacion
+    - Estado de pantalla bloqueada al finalizar
+
+GASTO ESTIMADO BLOQUE 2: ~0.75x creditos
+
+
+==================================================================
+   BLOQUE 3 - SISTEMA ANTI-COPIA EN VIVO (Proctoring Lite)
+==================================================================
+
+DESCRIPCION
+  Mientras el estudiante realiza un examen, el sistema detecta
+  comportamientos sospechosos: cambio de pestana, perdida de foco,
+  salir de pantalla completa. Cada evento registra una advertencia.
+  Al superar el maximo permitido, el examen se envia automaticamente.
+
+PASO 3.1 - Logica de deteccion de eventos (JavaScript/Vue 3)
+  Modelo: Claude Haiku 4.5 (0.4x)
+  Por que: Capturar visibilitychange y blur correctamente, sin
+  falsos positivos (ej: el alumno cierra un modal propio de la
+  app), requiere logica cuidadosa con guards.
+
+  Composable a crear: frontend/src/composables/useProctoring.js
+
+  Eventos a detectar:
+    document.addEventListener('visibilitychange', handler)
+    window.addEventListener('blur', handler)
+    document.addEventListener('fullscreenchange', handler)
+
+  Guards para evitar falsos positivos:
+    - Ignorar blur si el foco fue a un <input> del mismo documento
+    - Ignorar visibilitychange durante los primeros 3 segundos
+    - Debounce de 500ms en blur para evitar dobles disparos
+
+  Flujo por evento detectado:
+    1. Incrementar advertencias_count en Pinia store
+    2. Llamar POST /estudiante/quizzes/{id}/incidencia con tipo
+    3. Mostrar modal de advertencia con contador (X de Y)
+    4. Si advertencias_count >= advertencias_max:
+         -> Llamar POST /estudiante/quizzes/{id}/enviar
+         -> Navegar a pantalla de "examen enviado automaticamente"
+
+PASO 3.2 - Timer regresivo sincronizado con backend
+  Modelo: Claude Haiku 4.5 (0.4x)
+
+  Store Pinia: frontend/src/stores/exam.js
+    state: {
+      attemptId, quizId, tiempoRestante,
+      advertencias, advertenciasMax,
+      estado (en_progreso | enviado | bloqueado)
+    }
+    action syncTimer(): cada 30 segundos enviar PATCH al backend
+      con tiempo_restante_seg actual. Asi si el alumno recarga,
+      el tiempo no se reinicia.
+    action tick(): setInterval cada 1 segundo, decrementa
+      tiempoRestante. Si llega a 0: auto-submit.
+
+PASO 3.3 - Backend: endpoint de incidencias y auto-submit
+  Modelo: Claude Sonnet 4.5 (nosotros)
+  
+  POST /estudiante/quizzes/{id}/incidencia
+    - Valida que el attempt pertenece al estudiante autenticado
+    - Registra en exam_incidents
+    - Incrementa advertencias_count en quiz_attempts
+    - Retorna advertencias_count y advertencias_max
+    - Si advertencias_count >= max: llama auto-submit interno
+
+  POST /estudiante/quizzes/{id}/enviar
+    - Marca attempt.estado = 'enviado' o 'calificado'
+    - Llama a QuizGraderService::grade()
+    - Guarda nota_obtenida
+    - Retorna resultado
+
+PASO 3.4 - Componentes visuales de alerta
+  Modelo: Qwen3 Coder Next (0.05x)
+  
+  Componentes a crear:
+    ProctoringWarningModal.vue
+      - Modal rojo que aparece al primer cambio de pestana
+      - Muestra cuantas advertencias quedan antes del auto-cierre
+      - Boton "Entendido, volver al examen"
+
+    ExamBlockedScreen.vue
+      - Pantalla completa roja cuando se agota el tiempo o
+        se superan las advertencias
+      - Mensaje de examen enviado automaticamente
+      - Resumen de incidencias registradas
+
+    ExamTimerBar.vue
+      - Barra superior durante el examen
+      - Muestra tiempo restante con animacion
+      - Cambia a amarillo en <5 min, rojo en <2 min
+      - Muestra icono de advertencia con contador
+
+DIRECTRIZ DE SEGURIDAD IMPORTANTE:
+  La penalizacion de tiempo y el auto-submit deben estar
+  TAMBIEN en el backend. El frontend es solo informativo.
+  Si el estudiante deshabilita JavaScript o manipula el
+  store de Pinia, el backend igual detecta el timeout
+  cuando recibe la siguiente peticion y rechaza respuestas
+  fuera de tiempo.
+
+GASTO ESTIMADO BLOQUE 3: ~0.35x creditos
+
+
+==================================================================
+   BLOQUE 4 - ASISTENCIA INMUTABLE CON VERIFICACION
+==================================================================
+
+DESCRIPCION
+  El profesor genera un codigo dinamico en vivo al inicio de cada
+  clase. Los estudiantes lo ingresan desde sus dispositivos dentro
+  de una ventana de tiempo. Una vez registrado, el registro NO
+  puede modificarse ni borrarse (restriccion de BD + logica).
+
+PASO 4.1 - Backend: logica de inmutabilidad y validacion
+  Modelo: Claude Haiku 4.5 (0.4x)
+  Por que: La seguridad del sistema depende de que el codigo sea
+  correcto, este dentro de la ventana de tiempo y que la BD
+  rechace duplicados. Haiku 4.5 maneja esta logica critica de
+  backend con precision y soporta imagenes si el usuario necesita
+  mostrar capturas del flujo de asistencia.
+
+  Endpoints a crear en AttendanceController.php:
+
+  [profesor]
+    POST /profesor/asistencia/abrir-sesion
+      - Crea attendance_sessions con codigo aleatorio de 6 digitos
+      - El codigo expira en N minutos (configurable)
+      - Retorna el codigo para que el profesor lo muestre en clase
+
+    GET /profesor/asistencia/sesion-activa/{horario_id}
+      - Retorna la sesion abierta actualmente para ese horario
+      - Incluye el codigo, tiempo restante y lista de presentes
+
+    POST /profesor/asistencia/cerrar-sesion/{sesion_id}
+      - Cierra la sesion (abierta=false)
+      - Marca como ausentes a todos los inscritos sin registro
+
+    GET /profesor/asistencia/historial/{horario_id}
+      - Lista todas las sesiones con porcentajes de asistencia
+
+    PUT /profesor/asistencia/{attendance_id}/justificar
+      - UNICA accion de modificacion permitida: cambiar
+        estatus a 'justificado'. No puede cambiar nada mas.
+
+  [estudiante]
+    POST /estudiante/asistencia/marcar
+      - Payload: {horario_id, codigo}
+      - Verifica que codigo == attendance_sessions.codigo_dinamico
+      - Verifica que NOW() <= codigo_expira_at
+      - Verifica que abierta == true
+      - Intenta INSERT en attendances
+      - Si falla por UNIQUE: retornar "ya registrada"
+      - Si tiene exito: incrementar total_presentes
+
+  Regla de inmutabilidad en el modelo Attendance.php:
+    protected static function booted() {
+      static::updating(fn() => throw new ImmutableRecordException());
+      static::deleting(fn() => throw new ImmutableRecordException());
+    }
+    Solo el campo 'observacion' y 'estatus' (para justificacion)
+    pueden actualizarse, via un metodo justificar() controlado.
+
+PASO 4.2 - Generador de codigos dinamicos
+  Modelo: Claude Sonnet 4.5 (nosotros)
+  
+  Servicio: AttendanceCodeService.php
+    - genera codigo alfanumerico de 6 caracteres mayusculas
+    - excluye caracteres confusos (0, O, I, 1)
+    - verifica que no exista otro codigo activo para ese horario
+    - opcion: codigo de 4 digitos numericos para CAPTCHA simple
+
+PASO 4.3 - Vista Docente: Panel de asistencia en clase
+  Modelo: Qwen3 Coder Next (0.05x)
+  Archivo: frontend/src/views/profesor/AsistenciaPanel.vue
+
+  El panel muestra:
+    - Codigo grande en pantalla (para proyectar)
+    - Cronometro de expiracion del codigo
+    - Lista en vivo de quienes ya marcaron asistencia
+    - Contador: X de Y estudiantes presentes
+    - Boton para cerrar sesion y ver ausentes
+    - Boton para regenerar codigo si expiro
+
+PASO 4.4 - Vista Estudiante: Marcar asistencia
+  Modelo: Qwen3 Coder Next (0.05x)
+  Archivo: frontend/src/views/estudiante/AsistenciaMarcar.vue
+
+  Formulario simple:
+    - Selector de materia/horario activo
+    - Input del codigo (6 caracteres, auto-uppercase)
+    - Boton confirmar
+    - Feedback inmediato: "Asistencia registrada" o error
+    - Muestra historial de asistencias del periodo
+
+PASO 4.5 - Vista Estudiante: Historial de asistencias
+  Modelo: Qwen3 Coder Next (0.05x)
+  Archivo: seccion dentro de AsistenciaMarcar.vue o tab aparte
+
+  Muestra por materia:
+    - Porcentaje de asistencia con barra de progreso
+    - Alerta si el porcentaje cae bajo el 75%
+    - Lista de sesiones con fecha, estado y observacion
+
+GASTO ESTIMADO BLOQUE 4: ~0.30x creditos
+
+
+==================================================================
+   BLOQUE 5 - TAREAS Y CENTRO DE NOTIFICACIONES
+==================================================================
+
+DESCRIPCION
+  El profesor publica tareas con archivos guia y fecha limite.
+  El estudiante sube su entrega antes del cierre. Al expirar
+  la fecha, el sistema bloquea automaticamente nuevas entregas.
+  Las notificaciones aparecen en una campana global en el header.
+
+PASO 5.1 - Backend: Gestion de tareas y entregas
+  Modelo: Claude Haiku 4.5 (0.4x)
+  Por que: La logica de bloqueo temporal, validacion de archivos
+  y reactividad del temporizador de entrega exige buena sintaxis
+  de backend y es mas compleja que migraciones simples.
+
+  AssignmentController.php:
+  [profesor]
+    GET  /profesor/tareas
+    POST /profesor/tareas          (con archivo guia)
+    PUT  /profesor/tareas/{id}
+    DELETE /profesor/tareas/{id}   (solo si no hay entregas)
+    GET  /profesor/tareas/{id}/entregas
+
+  [estudiante]
+    GET  /estudiante/tareas        (con tiempo_restante calculado)
+    GET  /estudiante/tareas/{id}
+    POST /estudiante/tareas/{id}/entregar  (multipart/form-data)
+    GET  /estudiante/tareas/{id}/mi-entrega
+
+  Logica de entrega:
+    - Validar extension (pdf, zip, docx segun assignment)
+    - Validar tamano (< tamano_maximo_mb)
+    - Si NOW() > fecha_limite Y permitir_entrega_tardia=false:
+        retornar 423 (Locked) con mensaje claro
+    - Si es tardia y permitida: marcar submission.es_tardia=true
+    - Guardar archivo en storage/submissions/{assignment_id}/
+    - Respetar UNIQUE(assignment_id, estudiante_id):
+        si ya existe, hacer UPDATE (reentrega)
+
+PASO 5.2 - Sistema de notificaciones
+  Modelo: Claude Haiku 4.5 (0.4x)
+  Por que: La campana reactiva con polling y el contador en
+  vivo requieren logica de Vue 3 con composables y Pinia.
+
+  NotificationController.php:
+    GET  /notificaciones           (paginadas, usuario autenticado)
+    POST /notificaciones/{id}/leer
+    POST /notificaciones/leer-todas
+    GET  /notificaciones/no-leidas-count   (para polling)
+
+  Eventos que generan notificaciones automaticas:
+    - Profesor publica un examen -> notificar a estudiantes inscritos
+    - Profesor publica una tarea -> notificar a estudiantes inscritos
+    - Tarea por vencer en 24h -> notificar al estudiante
+    - Examen calificado -> notificar al estudiante con su nota
+    - Asistencia de sesion cerrada -> notificar a ausentes
+
+  Servicio: NotificationService.php
+    notificar(user_id, tipo, titulo, mensaje, url, datos?)
+    notificarGrupo(array , ...)
+
+PASO 5.3 - Composable y store de notificaciones (Vue 3)
+  Modelo: Claude Haiku 4.5 (0.4x)
+  Archivo: frontend/src/stores/notifications.js
+  Archivo: frontend/src/composables/useNotifications.js
+
+  Pinia store:
+    state: { items[], unreadCount, loading }
+    action fetchUnreadCount(): polling cada 30 segundos
+    action fetchAll(): cargar lista completa
+    action markRead(id): optimistic update + llamada API
+
+PASO 5.4 - Componentes UI de notificaciones y tareas
+  Modelo: Qwen3 Coder Next (0.05x)
+  
+  Archivos:
+    NotificationBell.vue   (en el header, ya existe AdminLayout.vue)
+      - Icono de campana con badge rojo de contador
+      - Dropdown con lista de notificaciones recientes
+      - Boton "Ver todas" y "Marcar todas como leidas"
+
+    frontend/src/views/estudiante/Tareas.vue
+      - Lista de tareas con estado (pendiente/entregada/vencida)
+      - Temporizador de cuenta regresiva para tareas proximas
+      - Zona de drag-and-drop para subir archivo
+      - Barra de progreso de subida
+
+    frontend/src/views/profesor/Tareas.vue
+      - CRUD de tareas con fechas
+      - Lista de entregas por tarea con estado
+      - Formulario de calificacion inline
+
+PASO 5.5 - Integracion del Bell en AdminLayout.vue
+  Modelo: Claude Sonnet 4.5 (nosotros)
+  Por que: AdminLayout.vue ya existe y tiene su propia logica
+  de roles y navegacion. Integrar el Bell sin romper nada
+  requiere conocer el componente actual.
+
+  Cambios en AdminLayout.vue:
+    - Importar NotificationBell.vue en el header
+    - Montar useNotifications() en el onMounted del layout
+    - Solo mostrar Bell para roles profesor y estudiante
+
+GASTO ESTIMADO BLOQUE 5: ~0.55x creditos
+
+
+==================================================================
+   BLOQUE 6 - CONSOLA DE AUDITORIA DOCENTE
+==================================================================
+
+DESCRIPCION
+  El profesor puede ver por alumno: todas sus entregas de tareas,
+  calificaciones de examenes y el reporte detallado de incidencias
+  anti-copia registradas durante cada examen. Es el expediente
+  academico-digital del alumno en esa materia.
+
+PASO 6.1 - Backend: endpoints del expediente
+  Modelo: Claude Sonnet 4.5 (nosotros)
+  Por que: Los queries involucran JOINs con exam_incidents,
+  quiz_attempts, submissions y attendances. Sonnet conoce
+  Eloquent y puede escribir los with() y loadMissing() correctos.
+
+  AuditoriaController.php:
+    GET /profesor/auditoria/{horario_id}/estudiantes
+      - Lista de estudiantes con resumen:
+        examenes_realizados, tareas_entregadas,
+        porcentaje_asistencia, incidencias_total
+
+    GET /profesor/auditoria/{horario_id}/estudiante/{estudiante_id}
+      - Expediente completo del alumno:
+        -> Intentos de examenes con nota y estado
+        -> Entregas de tareas con nota y si fue tardia
+        -> Historial de asistencias del periodo
+        -> Lista cronologica de incidencias anti-copia
+
+    GET /profesor/auditoria/quiz/{quiz_id}/incidencias
+      - Vista por examen: todos los alumnos y sus incidencias
+      - Util para detectar si un examen tuvo problemas generales
+
+PASO 6.2 - Vista de la consola
+  Modelo: Qwen3 Coder Next (0.05x)
+  Por que: Son tablas de datos, badges de estado y lineas de
+  tiempo. Codigo voluminoso pero con patron repetitivo que
+  Qwen3 genera eficientemente.
+
+  Archivos:
+    frontend/src/views/profesor/AuditoriaIndex.vue
+      - Tabla de estudiantes de la materia seleccionada
+      - Columnas: nombre, examenes, tareas, asistencia, incidencias
+      - Badges de color: verde (bien) / amarillo (regular) / rojo (mal)
+      - Click en fila -> abre expediente individual
+
+    frontend/src/views/profesor/AuditoriaExpediente.vue
+      - Header con datos del estudiante y resumen general
+      - Tres tabs: Examenes | Tareas | Asistencia
+      - Seccion de Incidencias con linea de tiempo:
+          [icono tipo] [fecha/hora] [descripcion]
+          Ej: [cambio_pestana] [2026-09-07 10:23:14] [Cambio de pestaña #2]
+      - Boton exportar reporte (opcional, Fase 2)
+
+PASO 6.3 - Badges y componentes de estado reutilizables
+  Modelo: Qwen3 Coder Next (0.05x)
+  
+  StatusBadge.vue (componente global)
+    Props: tipo (entregado|tardio|pendiente|aprobado|reprobado
+                  |presente|ausente|tardanza|justificado|
+                  advertencia|auto_submit)
+    Retorna el badge con color y texto apropiado.
+    Se usara en Auditoria, Tareas y Calificaciones.
+
+GASTO ESTIMADO BLOQUE 6: ~0.10x creditos
+
+
+==================================================================
+   BLOQUE 7 - INTEGRACION FINAL Y NAVEGACION
+==================================================================
+
+DESCRIPCION
+  Una vez que todos los bloques existen individualmente, hay que
+  conectarlos al sistema: agregar rutas al router Vue, agregar
+  los menus en AdminLayout.vue y verificar que el flujo completo
+  funcione de principio a fin.
+
+PASO 7.1 - Actualizar router Vue (index.js)
+  Modelo: Claude Sonnet 4.5 (nosotros)
+  
+  Rutas nuevas para PROFESOR (/profesor/*):
+    /profesor/aula-virtual          (hub del aula virtual)
+    /profesor/quizzes               (lista de examenes)
+    /profesor/quizzes/crear         (creador de examenes)
+    /profesor/quizzes/:id/editar
+    /profesor/quizzes/:id/resultados
+    /profesor/tareas                (gestion de tareas)
+    /profesor/asistencia            (panel de asistencia)
+    /profesor/auditoria             (consola de auditoria)
+    /profesor/auditoria/:estudianteId (expediente individual)
+
+  Rutas nuevas para ESTUDIANTE (/estudiante/*):
+    /estudiante/aula-virtual        (hub del estudiante)
+    /estudiante/examenes            (lista de examenes disponibles)
+    /estudiante/examenes/:id        (tomar examen - pantalla especial)
+    /estudiante/examenes/:id/resultado
+    /estudiante/tareas              (lista de tareas)
+    /estudiante/asistencia          (marcar y ver historial)
+
+  DIRECTRIZ: La ruta /estudiante/examenes/:id debe tener
+  meta: { layout: 'clean' } para que no muestre el sidebar
+  ni el header durante el examen. La pantalla de examen debe
+  ser de pantalla completa y sin distracciones.
+
+PASO 7.2 - Actualizar menus en AdminLayout.vue
+  Modelo: Claude Sonnet 4.5 (nosotros)
+  
+  Nueva seccion en menu PROFESOR:
+    NavSection label="Aula Virtual"
+    NavItem /profesor/aula-virtual    icono=🖥️  "Aula Virtual"
+    NavItem /profesor/quizzes         icono=📝  "Examenes"
+    NavItem /profesor/tareas          icono=📋  "Tareas"
+    NavItem /profesor/asistencia      icono=✅  "Asistencia"
+    NavItem /profesor/auditoria       icono=🔍  "Auditoria"
+
+  Nueva seccion en menu ESTUDIANTE:
+    NavSection label="Aula Virtual"
+    NavItem /estudiante/aula-virtual  icono=🖥️  "Aula Virtual"
+    NavItem /estudiante/examenes      icono=📝  "Mis Examenes"
+    NavItem /estudiante/tareas        icono=📋  "Mis Tareas"
+    NavItem /estudiante/asistencia    icono=✅  "Asistencia"
+
+PASO 7.3 - Hub de Aula Virtual (pagina de entrada)
+  Modelo: Qwen3 Coder Next (0.05x)
+  
+  Archivos:
+    frontend/src/views/profesor/AulaVirtualHub.vue
+    frontend/src/views/estudiante/AulaVirtualHub.vue
+
+  El Hub muestra cards de acceso rapido a cada submódulo
+  con estadisticas en vivo:
+    Profesor: examenes activos, tareas pendientes de calificar,
+              sesion de asistencia abierta, incidencias recientes
+    Estudiante: examenes proximos, tareas por entregar,
+                ultima asistencia, notificaciones no leidas
+
+PASO 7.4 - Pruebas de flujo completo
+  Modelo: Claude Sonnet 4.5 (nosotros)
+  
+  Flujo 1 - Examen completo:
+    Profesor crea examen -> publica -> estudiante lo ve ->
+    estudiante lo inicia -> proctoring activo -> estudiante
+    cambia pestana -> advertencia registrada -> estudiante
+    completa -> envia -> nota calculada -> profesor ve resultado
+
+  Flujo 2 - Tarea completa:
+    Profesor crea tarea -> sube guia -> estudiante ve notificacion ->
+    estudiante descarga guia -> estudiante sube entrega ->
+    expira fecha limite -> nuevas entregas bloqueadas ->
+    profesor califica -> estudiante ve nota y notificacion
+
+  Flujo 3 - Asistencia completa:
+    Profesor abre sesion -> codigo generado -> estudiantes
+    ingresan codigo -> lista en vivo actualizada -> profesor
+    cierra sesion -> ausentes marcados automaticamente ->
+    historial disponible para auditoria
+
+GASTO ESTIMADO BLOQUE 7: ~0.15x creditos
+
+
+==================================================================
+   RESUMEN EJECUTIVO Y TABLA DE MODELOS
+==================================================================
+
+TABLA DE DECISIONES DE MODELO POR TAREA
+-----------------------------------------
+
+  TAREA                                  MODELO          COSTO
+  -------------------------------------------------------------------
+  [NIVEL 1 - Integracion y errores criticos]
+  Integracion con sistema existente      Sonnet 4.5      1.30x
+  Controladores Laravel + rutas          Sonnet 4.5      1.30x
+  Modelos Eloquent con relaciones        Sonnet 4.5      1.30x
+  Correccion de errores cross-bloque     Sonnet 4.5      1.30x
+  Pruebas de flujo completo              Sonnet 4.5      1.30x
+  Cambios en api.php / router / Layout   Sonnet 4.5      1.30x
+  -------------------------------------------------------------------
+  [NIVEL 2 - Logica nueva (backend + frontend reactivo)]
+  Disenar esquema relacional BD          Haiku 4.5       0.40x
+  Disenar contratos JSON                 Haiku 4.5       0.40x
+  Algoritmo de calificacion automatica   Haiku 4.5       0.40x
+  Logica inmutabilidad asistencia        Haiku 4.5       0.40x
+  Logica proctoring JS (eventos blur)    Haiku 4.5       0.40x
+  Logica Vue 3 reactiva compleja         Haiku 4.5       0.40x
+  Pinia stores (exam, notificaciones)    Haiku 4.5       0.40x
+  Subida de archivos + validacion        Haiku 4.5       0.40x
+  Timer sincronizado con backend         Haiku 4.5       0.40x
+  -------------------------------------------------------------------
+  [NIVEL 3 - Codigo repetitivo con esquema definido en texto]
+  Generar archivos de migracion PHP      Qwen3 Coder     0.05x
+  Maquetado Tailwind (tablas, modales)   Qwen3 Coder     0.05x
+  Componentes UI repetitivos             Qwen3 Coder     0.05x
+  Vista consola auditoria (tablas)       Qwen3 Coder     0.05x
+  Hub de Aula Virtual (cards)            Qwen3 Coder     0.05x
+  -------------------------------------------------------------------
+  [DESCARTADOS - Sin soporte de imagenes]
+  Deepseek v3.2    -> REMOVIDO (no soporta imagenes)
+  MiniMax M2.5     -> REMOVIDO (no soporta imagenes)
+  MiniMax M2.1     -> REMOVIDO (no soporta imagenes)
+  GLM-5            -> REMOVIDO (no soporta imagenes)
+
+
+ORDEN DE IMPLEMENTACION RECOMENDADO
+-------------------------------------
+
+  FASE 1 (Base solida - empezar aqui):
+    Bloque 1 -> Bloque 4 -> Bloque 5 (notificaciones basicas)
+    Esto da: BD lista + asistencia funcional + tareas simples
+
+  FASE 2 (Motor de examenes):
+    Bloque 2 (sin proctoring) -> Bloque 3
+    Esto da: examenes funcionales + seguridad anti-copia
+
+  FASE 3 (Cierre):
+    Bloque 6 -> Bloque 7
+    Esto da: auditoria completa + integracion final
+
+  Esta secuencia permite probar cada bloque de forma
+  independiente antes de continuar al siguiente.
+
+
+DIRECTRICES GENERALES DEL PROYECTO
+------------------------------------
+
+  1. NUNCA romper los modelos existentes
+     Estudiante, Inscripcion, Horario, Profesor, Materia
+     son la base. El Aula Virtual se conecta SIEMPRE
+     a traves de horario_id, no directamente a materia_id.
+
+  2. Respuestar API consistentes
+     Todos los endpoints nuevos usan el mismo formato:
+       { "success": true, "data": {...} }
+     Igual que los controladores existentes.
+
+  3. Middleware de roles
+     Las rutas del profesor usan: middleware('role:profesor')
+     Las rutas del estudiante usan: middleware('role:estudiante')
+     Igual que en routes/api.php actual.
+
+  4. La pantalla de examen es un caso especial
+     /estudiante/examenes/:id debe tener layout limpio (sin
+     sidebar ni header) para no dar puntos de escape al
+     estudiante durante el examen.
+
+  5. Columnas JSON con cast en Laravel
+     Todos los modelos con columna JSON deben tener:
+       protected  = ['contenido' => 'array'];
+     Asi se puede acceder como ->contenido['opciones']
+
+  6. Transacciones en operaciones criticas
+     Envio de examen, registro de asistencia y entrega de
+     tarea deben usar DB::transaction() para garantizar
+     consistencia en caso de error a mitad del proceso.
+
+  7. Indices compuestos en tablas de alta lectura
+     attendances: INDEX(horario_id, session_date)
+     notifications: INDEX(user_id, leida)
+     quiz_attempts: INDEX(quiz_id, estudiante_id)
+     Estos indices son criticos para que las vistas
+     en vivo no hagan table-scans completos.
+
+  8. Storage de archivos
+     Usar storage/app/public/ con enlaces simbolicos.
+     Organizar por tipo:
+       storage/quizzes/{quiz_id}/           (archivos multimedia)
+       storage/submissions/{assignment_id}/ (entregas)
+       storage/assignments/{id}/            (guias del profesor)
+
+
+GASTO TOTAL ESTIMADO DEL MODULO COMPLETO
+------------------------------------------
+
+  Bloque 1 (BD y Migraciones):          ~0.50x  [Haiku + Qwen3 + Sonnet]
+  Bloque 2 (Motor Examenes):            ~1.00x  [Haiku + Qwen3 + Sonnet]
+  Bloque 3 (Proctoring):                ~0.50x  [Haiku + Sonnet]
+  Bloque 4 (Asistencia Inmutable):      ~0.50x  [Haiku + Qwen3 + Sonnet]
+  Bloque 5 (Tareas y Notificaciones):   ~0.70x  [Haiku + Qwen3 + Sonnet]
+  Bloque 6 (Auditoria):                 ~0.20x  [Qwen3 + Sonnet]
+  Bloque 7 (Integracion Final):         ~0.20x  [Sonnet]
+  ----------------------------------------
+  TOTAL ESTIMADO:                       ~3.60x creditos
+
+  NOTA: El costo subio respecto al plan original (~2.55x)
+  porque Haiku 4.5 (0.4x) reemplaza a Deepseek (0.25x).
+  La diferencia es aceptable: ganamos soporte de imagenes
+  en todas las sesiones, lo cual es necesario para el flujo
+  de trabajo real donde se comparten capturas de errores.
+
+  Comparado con usar Sonnet 4.5 para todo: ~13x creditos
+  Ahorro estimado: ~72% del gasto total
+
+
+CUANDO ESCALAR A SONNET 4.5
+-----------------------------
+
+  Usar Sonnet 4.5 (nosotros) cuando:
+    - El codigo nuevo debe integrarse con codigo existente
+    - Hay un error que no tiene causa obvia
+    - Dos bloques deben comunicarse y hay conflicto
+    - Se necesita tomar una decision de diseno
+    - Se va a tocar AdminLayout.vue, router/index.js o api.php
+    - Se detecta que un modelo menor produjo algo incorrecto
+
+  No usar Sonnet 4.5 cuando:
+    - La tarea es escribir migraciones siguiendo un esquema dado
+    - La tarea es maquetar una tabla HTML con Tailwind
+    - La tarea es un formulario simple de Vue 3
+    - La logica ya esta definida y solo hay que transcribirla
+
+  Usar Haiku 4.5 (nivel 2) cuando:
+    - La tarea requiere disenar logica nueva (BD, algoritmo, store)
+    - El usuario puede compartir una imagen durante la sesion
+    - El codigo es nuevo y no toca archivos criticos existentes
+    - Es la primera vez que se trabaja ese modulo o funcionalidad
+
+  Usar Qwen3 Coder Next (nivel 3) solo cuando:
+    - La especificacion esta escrita 100% en texto en este documento
+    - Es transcripcion pura: 'toma este esquema y escribe el .php'
+    - No hay posibilidad de que el usuario comparta una imagen
+    - Si hay cualquier duda: subir a Haiku 4.5
+
+==================================================================
+   FIN DEL DOCUMENTO
+   Fecha de elaboracion: Septiembre 2026
+   Proyecto: Sistema de Gestion Universitaria - Aula Virtual
+==================================================================
+
+
+
+
+
+
+

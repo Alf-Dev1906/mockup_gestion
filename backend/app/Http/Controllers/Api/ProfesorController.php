@@ -137,7 +137,7 @@ class ProfesorController extends Controller
     public function dashboard(Request $request): JsonResponse
     {
         $user = $request->user();
-        $profesor = Profesor::where('user_id', $user->id)->first();
+        $profesor = Profesor::where('email', $user->email)->first();
 
         if (!$profesor) {
             return response()->json(['error' => 'Profesor no encontrado'], 404);
@@ -168,7 +168,7 @@ class ProfesorController extends Controller
      */
     public function misMaterias(Request $request): JsonResponse
     {
-        $profesor = Profesor::where('user_id', $request->user()->id)->first();
+        $profesor = Profesor::where('email', $request->user()->email)->first();
 
         if (!$profesor) {
             return response()->json(['error' => 'Profesor no encontrado'], 404);
@@ -205,7 +205,7 @@ class ProfesorController extends Controller
      */
     public function estudiantesMateria(Request $request, int $materiaId): JsonResponse
     {
-        $profesor = Profesor::where('user_id', $request->user()->id)->first();
+        $profesor = Profesor::where('email', $request->user()->email)->first();
 
         if (!$profesor) {
             return response()->json(['error' => 'Profesor no encontrado'], 404);
@@ -258,7 +258,7 @@ class ProfesorController extends Controller
             'parcial3'       => 'nullable|numeric|min:0|max:20',
         ]);
 
-        $profesor      = Profesor::where('user_id', $request->user()->id)->first();
+        $profesor      = Profesor::where('email', $request->user()->email)->first();
         $inscripcion   = Inscripcion::with('horario')->findOrFail($request->inscripcion_id);
 
         // Verificar que el profesor enseña esta materia
@@ -309,7 +309,7 @@ class ProfesorController extends Controller
      */
     public function miHorario(Request $request): JsonResponse
     {
-        $profesor = Profesor::where('user_id', $request->user()->id)->first();
+        $profesor = Profesor::where('email', $request->user()->email)->first();
 
         if (!$profesor) {
             return response()->json(['error' => 'Profesor no encontrado'], 404);

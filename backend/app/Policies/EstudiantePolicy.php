@@ -81,7 +81,7 @@ class EstudiantePolicy
      */
     private function profesorTeachesEstudiante(User $user, Estudiante $estudiante): bool
     {
-        $profesor = \App\Models\Profesor::where('user_id', $user->id)->first();
+        $profesor = \App\Models\Profesor::where('email', $user->email)->first();
         
         if (!$profesor) {
             return false;

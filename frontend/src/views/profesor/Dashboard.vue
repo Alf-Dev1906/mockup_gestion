@@ -72,7 +72,11 @@ const loading = ref(true)
 const stats = ref({})
 
 onMounted(async () => {
-  try { const { data } = await api.get('/profesor/dashboard'); stats.value = data }
-  finally { loading.value = false }
+  try { 
+    const { data } = await api.get('/profesor/dashboard')
+    stats.value = data.data || data
+  } finally { 
+    loading.value = false 
+  }
 })
 </script>

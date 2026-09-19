@@ -97,12 +97,12 @@
               </td>
               <td class="px-6 py-4 text-center">
                 <span class="font-bold text-lg" :class="getNotaColor(c.nota_final)">
-                  {{ c.nota_final !== null ? c.nota_final.toFixed(2) : '—' }}
+                  {{ c.nota_final !== null ? parseFloat(c.nota_final).toFixed(2) : '—' }}
                 </span>
               </td>
               <td class="px-6 py-4 text-center">
                 <span v-if="c.nota_final !== null" :class="getEstadoBadge(c.nota_final)" class="inline-block px-3 py-1 rounded-full text-xs font-semibold">
-                  {{ c.nota_final >= 10 ? 'Aprobado' : 'Reprobado' }}
+                  {{ parseFloat(c.nota_final) >= 10 ? 'Aprobado' : 'Reprobado' }}
                 </span>
                 <span v-else class="text-gray-400 text-xs">Pendiente</span>
               </td>
@@ -223,10 +223,10 @@
           <div v-if="notaFinalCalculada !== null" class="bg-gray-50 rounded-xl p-4 text-center">
             <p class="text-sm text-gray-600 mb-2">Nota Final Calculada</p>
             <p class="text-3xl font-bold" :class="getNotaColor(notaFinalCalculada)">
-              {{ notaFinalCalculada.toFixed(2) }}
+              {{ parseFloat(notaFinalCalculada).toFixed(2) }}
             </p>
-            <p class="text-sm mt-2" :class="notaFinalCalculada >= 10 ? 'text-green-600' : 'text-red-600'">
-              {{ notaFinalCalculada >= 10 ? '✓ Aprobado' : '✗ Reprobado' }}
+            <p class="text-sm mt-2" :class="parseFloat(notaFinalCalculada) >= 10 ? 'text-green-600' : 'text-red-600'">
+              {{ parseFloat(notaFinalCalculada) >= 10 ? '✓ Aprobado' : '✗ Reprobado' }}
             </p>
           </div>
 
@@ -310,13 +310,15 @@ const notaFinalCalculada = computed(() => {
 
 const getNotaColor = (nota) => {
   if (nota === null) return 'text-gray-400'
-  if (nota >= 16) return 'text-green-600'
-  if (nota >= 10) return 'text-blue-600'
+  const n = parseFloat(nota)
+  if (n >= 16) return 'text-green-600'
+  if (n >= 10) return 'text-blue-600'
   return 'text-red-600'
 }
 
 const getEstadoBadge = (nota) => {
-  if (nota >= 10) return 'bg-green-100 text-green-700'
+  const n = parseFloat(nota)
+  if (n >= 10) return 'bg-green-100 text-green-700'
   return 'bg-red-100 text-red-700'
 }
 

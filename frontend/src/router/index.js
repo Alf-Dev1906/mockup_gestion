@@ -12,6 +12,9 @@ const routes = [
   { path: '/noticias', name: 'Noticias', component: () => import('@/views/Noticias.vue') },
   { path: '/contacto', name: 'Contacto', component: () => import('@/views/Contacto.vue') },
 
+  // ── Notificaciones (ruta protegida compartida) ────────────────────────
+  { path: '/notificaciones', name: 'Notificaciones', component: () => import('@/views/Notificaciones.vue'), meta: { requiresAuth: true } },
+
   // ── Redirect inteligente desde /dashboard ────────────────────────────────
   {
     path: '/dashboard',
@@ -87,6 +90,24 @@ const routes = [
       { path: 'materias', name: 'ProfesorMaterias', component: () => import('@/views/profesor/Materias.vue') },
       { path: 'calificaciones', name: 'ProfesorCalificaciones', component: () => import('@/views/profesor/Calificaciones.vue') },
       { path: 'horario', name: 'ProfesorHorario', component: () => import('@/views/profesor/Horario.vue') },
+      { path: 'perfil', name: 'ProfesorPerfil', component: () => import('@/views/profesor/Perfil.vue') },
+
+      // ── Aula Virtual ─────────────────────────────────────────────────
+      { path: 'aula-virtual', name: 'ProfesorAulaVirtual', component: () => import('@/views/profesor/AulaVirtualHub.vue') },
+      { path: 'quizzes', name: 'ProfesorQuizzes', component: () => import('@/views/profesor/QuizLista.vue') },
+      { path: 'quizzes/nuevo', name: 'ProfesorQuizNuevo', component: () => import('@/views/profesor/QuizCreador.vue') },
+      { path: 'quizzes/:id/editar', name: 'ProfesorQuizEditar', component: () => import('@/views/profesor/QuizCreador.vue') },
+      { path: 'quizzes/:id/resultados', name: 'ProfesorQuizResultados', component: () => import('@/views/profesor/QuizResultados.vue') },
+
+      // ── Tareas ──────────────────────────────────────────────────────
+      { path: 'tareas', name: 'ProfesorTareas', component: () => import('@/views/profesor/Tareas.vue') },
+
+      // ── Asistencia ───────────────────────────────────────────────────
+      { path: 'asistencia', name: 'ProfesorAsistenciaSelector', component: () => import('@/views/profesor/AsistenciaSelector.vue') },
+      { path: 'asistencia/:horarioId', name: 'ProfesorAsistencia', component: () => import('@/views/profesor/AsistenciaPanel.vue') },
+
+      // ── Auditoría Docente ───────────────────────────────────────────
+      { path: 'auditoria', name: 'ProfesorAuditoria', component: () => import('@/views/profesor/AuditoriaIndex.vue') },
     ],
   },
 
@@ -104,7 +125,28 @@ const routes = [
       { path: 'inscripcion', name: 'EstudianteInscripcion', component: () => import('@/views/estudiante/Inscripcion.vue') },
       { path: 'solicitud', name: 'EstudianteSolicitud', component: () => import('@/views/estudiante/Solicitud.vue') },
       { path: 'perfil', name: 'EstudiantePerfil', component: () => import('@/views/estudiante/Perfil.vue') },
+
+      // ── Aula Virtual ─────────────────────────────────────────────────
+      { path: 'aula-virtual', name: 'EstudianteAulaVirtual', component: () => import('@/views/estudiante/AulaVirtualHub.vue') },
+      { path: 'quizzes', name: 'EstudianteQuizzes', component: () => import('@/views/estudiante/QuizLista.vue') },
+      { path: 'quizzes/:id/resultado', name: 'EstudianteQuizResultado', component: () => import('@/views/estudiante/QuizResultado.vue') },
+
+      // ── Tareas ──────────────────────────────────────────────────────
+      { path: 'tareas', name: 'EstudianteTareas', component: () => import('@/views/estudiante/Tareas.vue') },
+
+      // ── Asistencia ───────────────────────────────────────────────────
+      { path: 'asistencia', name: 'EstudianteAsistencia', component: () => import('@/views/estudiante/AsistenciaMarcar.vue') },
     ],
+  },
+
+  // ────────────────────────────────────────────────────────────────────────
+  // RUTA ESPECIAL - EXAMEN (PANTALLA COMPLETA SIN LAYOUT)
+  // ────────────────────────────────────────────────────────────────────────
+  {
+    path: '/estudiante/quizzes/:id/tomar',
+    name: 'EstudianteQuizTomar',
+    component: () => import('@/views/estudiante/QuizExamen.vue'),
+    meta: { requiresAuth: true, minRole: 'estudiante', layout: 'clean' }
   },
 
   // ── Catch-all ────────────────────────────────────────────────────────────

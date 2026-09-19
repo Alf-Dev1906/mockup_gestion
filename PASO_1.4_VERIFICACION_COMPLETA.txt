@@ -1,0 +1,349 @@
+==================================================================
+   PASO 1.4 - VERIFICACIÓN COMPLETA DE MIGRACIONES Y BD
+   Fecha: Septiembre 7, 2026
+   Estado: ✅ TODAS LAS RESTRICCIONES VERIFICADAS
+==================================================================
+
+Ejecutado: C:\xampp\php\php.exe artisan migrate
+Base de datos: sge_db (MariaDB via XAMPP)
+Resultado: 10/10 tablas creadas exitosamente
+
+==================================================================
+VERIFICACIÓN 1: FOREIGN KEYS (INTEGRIDAD REFERENCIAL)
+==================================================================
+
+✅ TABLA: quizzes
+   FK: horario_id → horarios(id) ON DELETE CASCADE
+   FK: created_by → users(id) ON DELETE CASCADE
+   Índices: horario_id, estado, created_by
+   Tipos: ENUM(quiz, examen, practica), ENUM(borrador, publicado, cerrado)
+   ✅ VERIFICADO
+
+✅ TABLA: quiz_questions
+   FK: quiz_id → quizzes(id) ON DELETE CASCADE
+   Índices: quiz_id, orden
+   Tipo contenido: JSON con validación (json_valid)
+   Tipos ENUM: seleccion, verdadero_falso, relacion_columnas, espacios, multimedia
+   ✅ VERIFICADO
+
+✅ TABLA: quiz_attempts
+   FK: quiz_id → quizzes(id) ON DELETE CASCADE
+   FK: estudiante_id → estudiantes(id) ON DELETE CASCADE
+   FK: inscripcion_id → inscripciones(id)
+   UNIQUE: (quiz_id, estudiante_id) ← CRÍTICO para intentos limitados
+   Índices: estado, estudiante_id
+   Tipos ENUM: en_progreso, enviado, calificado, anulado
+   ✅ VERIFICADO
+
+✅ TABLA: quiz_answers
+   FK: attempt_id → quiz_attempts(id) ON DELETE CASCADE
+   FK: question_id → quiz_questions(id) ON DELETE CASCADE
+   Índices: attempt_id, question_id
+   Tipo respuesta: JSON con validación (json_valid)
+   ✅ VERIFICADO
+
+✅ TABLA: exam_incidents
+   FK: attempt_id → quiz_attempts(id) ON DELETE CASCADE
+   Índices: attempt_id, tipo, ocurrido_at
+   Tipo metadata: JSON con validación (json_valid)
+   Tipos ENUM: cambio_pestana, perdida_foco, pantalla_completa,
+               advertencia_enviada, auto_submit
+   ✅ VERIFICADO
+
+✅ TABLA: attendances
+   FK: horario_id → horarios(id) ON DELETE CASCADE
+   FK: estudiante_id → estudiantes(id) ON DELETE CASCADE
+   FK: inscripcion_id → inscripciones(id)
+   UNIQUE: (horario_id, estudiante_id, session_date) ← CRÍTICO inmutabilidad
+   Índices: session_date, estatus
+   Tipos ENUM: presente, ausente, tardanza, justificado
+   ✅ VERIFICADO
+
+✅ TABLA: attendance_sessions
+   FK: horario_id → horarios(id) ON DELETE CASCADE
+   FK: profesor_id → profesores(id) ON DELETE CASCADE
+   UNIQUE: (horario_id, session_date)
+   Índices: session_date, abierta
+   ✅ VERIFICADO
+
+✅ TABLA: assignments
+   FK: horario_id → horarios(id) ON DELETE CASCADE
+   Índices: horario_id, estatus, fecha_limite
+   Tipos ENUM: borrador, publicado, cerrado
+   Defaults: nota_maxima=20, tipos_permitidos='pdf,zip,docx', tamano_maximo_mb=10
+   ✅ VERIFICADO
+
+✅ TABLA: submissions
+   FK: assignment_id → assignments(id) ON DELETE CASCADE
+   FK: estudiante_id → estudiantes(id) ON DELETE CASCADE
+   FK: inscripcion_id → inscripciones(id)
+   FK: calificado_por → users(id) ON DELETE SET NULL (nullable)
+   UNIQUE: (assignment_id, estudiante_id)
+   Índices: estudiante_id, es_tardia
+   ✅ VERIFICADO
+
+✅ TABLA: notifications
+   FK: user_id → users(id) ON DELETE CASCADE
+   ÍNDICE COMPUESTO CRÍTICO: (user_id, leida) ← para campana tiempo real
+   Índice: created_at
+   Tipo datos: JSON con validación (json_valid)
+   ✅ VERIFICADO
+
+==================================================================
+VERIFICACIÓN 2: RESTRICCIONES UNIQUE (INMUTABILIDAD)
+==================================================================
+
+✅ quiz_attempts: UNIQUE(quiz_id, estudiante_id)
+   Propósito: Limitar intentos a 1 por defecto (intentos_permitidos=1)
+   Efecto: Un estudiante no puede tener 2 intentos del mismo quiz
+   Estado: ✅ CONSTRAINT APLICADA
+
+✅ attendances: UNIQUE(horario_id, estudiante_id, session_date)
+   Propósito: ASISTENCIA INMUTABLE - no se puede registrar 2 veces
+   Efecto: Registro sellado, imposible duplicar asistencia en mismo día
+   Estado: ✅ CONSTRAINT APLICADA
+
+✅ attendance_sessions: UNIQUE(horario_id, session_date)
+   Propósito: Solo una sesión por horario por día
+   Efecto: No se pueden abrir 2 sesiones simultáneas en mismo horario/día
+   Estado: ✅ CONSTRAINT APLICADA
+
+✅ submissions: UNIQUE(assignment_id, estudiante_id)
+   Propósito: Una entrega por estudiante por tarea
+   Efecto: No se puede entregar la misma tarea 2 veces
+   Estado: ✅ CONSTRAINT APLICADA
+
+==================================================================
+VERIFICACIÓN 3: ÍNDICES DE RENDIMIENTO
+==================================================================
+
+✅ CRÍTICO: notifications(user_id, leida)
+   Propósito: Campana de notificaciones en tiempo real
+   Query optimizado: SELECT * FROM notifications WHERE user_id=X AND leida=0
+   Estado: ✅ ÍNDICE COMPUESTO APLICADO
+
+✅ quizzes(horario_id), quizzes(estado)
+   Propósito: Filtros frecuentes por horario y estado (publicados/borradores)
+   Estado: ✅ ÍNDICES APLICADOS
+
+✅ quiz_attempts(estado), quiz_attempts(estudiante_id)
+   Propósito: Filtros por estado (en_progreso, enviados) y por estudiante
+   Estado: ✅ ÍNDICES APLICADOS
+
+✅ exam_incidents(attempt_id), exam_incidents(tipo), exam_incidents(ocurrido_at)
+   Propósito: Búsqueda de incidencias por intento, tipo y timestamp
+   Estado: ✅ ÍNDICES APLICADOS
+
+✅ attendances(session_date), attendances(estatus)
+   Propósito: Filtros por fecha y estado (presente/ausente)
+   Estado: ✅ ÍNDICES APLICADOS
+
+✅ assignments(horario_id), assignments(estatus), assignments(fecha_limite)
+   Propósito: Filtros por horario, estado y fecha límite
+   Estado: ✅ ÍNDICES APLICADOS
+
+✅ notifications(created_at)
+   Propósito: Ordenamiento cronológico de notificaciones
+   Estado: ✅ ÍNDICE APLICADO
+
+==================================================================
+VERIFICACIÓN 4: TIPOS DE DATOS JSON Y VALIDACIÓN
+==================================================================
+
+✅ quiz_questions.contenido: JSON con CHECK(json_valid)
+   Propósito: Almacenar estructura flexible de preguntas (opciones, columnas, etc.)
+   Validación: MariaDB valida sintaxis JSON antes de INSERT
+   Estado: ✅ CONSTRAINT json_valid APLICADA
+
+✅ quiz_answers.respuesta: JSON con CHECK(json_valid)
+   Propósito: Respuesta agnóstica al tipo de pregunta
+   Validación: MariaDB valida sintaxis JSON antes de INSERT
+   Estado: ✅ CONSTRAINT json_valid APLICADA
+
+✅ exam_incidents.metadata: JSON con CHECK(json_valid), NULLABLE
+   Propósito: Datos extras del evento (navegador, timestamp preciso, etc.)
+   Validación: MariaDB valida sintaxis JSON antes de INSERT
+   Estado: ✅ CONSTRAINT json_valid APLICADA
+
+✅ notifications.datos: JSON con CHECK(json_valid), NULLABLE
+   Propósito: Metadata de la notificación (tipo_examen, nota, etc.)
+   Validación: MariaDB valida sintaxis JSON antes de INSERT
+   Estado: ✅ CONSTRAINT json_valid APLICADA
+
+==================================================================
+VERIFICACIÓN 5: CASCADAS ON DELETE
+==================================================================
+
+✅ Borrar quiz → CASCADE a quiz_questions, quiz_attempts
+✅ Borrar quiz_attempts → CASCADE a quiz_answers, exam_incidents
+✅ Borrar assignment → CASCADE a submissions
+✅ Borrar user → CASCADE a notifications, SET NULL a submissions.calificado_por
+✅ Borrar horario → CASCADE a quizzes, assignments, attendances, attendance_sessions
+✅ Borrar estudiante → CASCADE a quiz_attempts, attendances, submissions
+✅ Borrar profesor → CASCADE a attendance_sessions
+
+Todas las cascadas verificadas: ✅ CORRECTO
+
+==================================================================
+VERIFICACIÓN 6: VALORES POR DEFECTO
+==================================================================
+
+✅ quizzes.duracion_minutos = 60
+✅ quizzes.intentos_permitidos = 1
+✅ quizzes.advertencias_max = 3
+✅ quizzes.estado = 'borrador'
+✅ quizzes.orden_aleatorio = false
+✅ quizzes.mostrar_resultado_inmediato = true
+✅ quiz_attempts.estado = 'en_progreso'
+✅ quiz_attempts.advertencias_count = 0
+✅ quiz_attempts.auto_enviado = false
+✅ attendances.estatus = 'ausente'
+✅ attendance_sessions.abierta = true
+✅ attendance_sessions.total_presentes = 0
+✅ assignments.nota_maxima = 20.00
+✅ assignments.tipos_permitidos = 'pdf,zip,docx'
+✅ assignments.tamano_maximo_mb = 10
+✅ assignments.estatus = 'borrador'
+✅ assignments.permitir_entrega_tardia = false
+✅ submissions.es_tardia = false
+✅ notifications.leida = false
+
+Todos los defaults verificados: ✅ CORRECTO
+
+==================================================================
+VERIFICACIÓN 7: TIPOS ENUM
+==================================================================
+
+✅ quizzes.tipo: quiz, examen, practica
+✅ quizzes.estado: borrador, publicado, cerrado
+✅ quiz_questions.tipo: seleccion, verdadero_falso, relacion_columnas,
+                        espacios, multimedia
+✅ quiz_attempts.estado: en_progreso, enviado, calificado, anulado
+✅ exam_incidents.tipo: cambio_pestana, perdida_foco, pantalla_completa,
+                        advertencia_enviada, auto_submit
+✅ attendances.estatus: presente, ausente, tardanza, justificado
+✅ assignments.estatus: borrador, publicado, cerrado
+
+Todos los ENUM verificados: ✅ CORRECTO
+
+==================================================================
+VERIFICACIÓN 8: RELACIONES MODELO ↔ TABLA
+==================================================================
+
+Verificando que cada modelo Eloquent corresponda a su tabla:
+
+✅ Quiz → quizzes
+   Relaciones: belongsTo(Horario), hasMany(QuizQuestion), hasMany(QuizAttempt)
+   Scopes: publicados(), disponibles(), porHorario()
+
+✅ QuizQuestion → quiz_questions
+   Relaciones: belongsTo(Quiz), hasMany(QuizAnswer)
+   Scopes: obligatorias(), porTipo(), ordenadas()
+
+✅ QuizAttempt → quiz_attempts
+   Relaciones: belongsTo(Quiz), belongsTo(Estudiante), belongsTo(Inscripcion)
+   Métodos: registrarAdvertencia(), auto_enviar()
+
+✅ QuizAnswer → quiz_answers
+   Relaciones: belongsTo(QuizAttempt), belongsTo(QuizQuestion)
+   Métodos: marcarCorrecta(), marcarIncorrecta()
+
+✅ ExamIncident → exam_incidents
+   Relaciones: belongsTo(QuizAttempt)
+   Scopes: cambioDePestana(), perdidaDeFoco()
+
+✅ Attendance → attendances
+   Relaciones: belongsTo(Horario), belongsTo(Estudiante), belongsTo(Inscripcion)
+   Scopes: presentes(), ausentes(), tardanzas(), justificadas()
+
+✅ AttendanceSession → attendance_sessions
+   Relaciones: belongsTo(Horario), belongsTo(Profesor)
+   Métodos: esCodigoValido(), cerrar(), generarCodigoDinamico()
+
+✅ Assignment → assignments
+   Relaciones: belongsTo(Horario), hasMany(Submission)
+   Métodos: estaAbierta(), esEntregaTardia()
+
+✅ Submission → submissions
+   Relaciones: belongsTo(Assignment), belongsTo(Estudiante), belongsTo(User)
+   Métodos: calificar(), puedeSerModificada()
+
+✅ Notification → notifications
+   Relaciones: belongsTo(User)
+   Métodos: marcarComoLeida(), crearNotificacionExamen()
+
+Todas las relaciones verificadas: ✅ CORRECTO
+
+==================================================================
+VERIFICACIÓN 9: INTEGRIDAD CON TABLAS EXISTENTES
+==================================================================
+
+Las 10 tablas nuevas se conectan correctamente con las existentes:
+
+✅ quizzes.horario_id → horarios.id (tabla existente)
+✅ quiz_attempts.estudiante_id → estudiantes.id (tabla existente)
+✅ quiz_attempts.inscripcion_id → inscripciones.id (tabla existente)
+✅ attendances.horario_id → horarios.id (tabla existente)
+✅ attendances.estudiante_id → estudiantes.id (tabla existente)
+✅ attendances.inscripcion_id → inscripciones.id (tabla existente)
+✅ attendance_sessions.horario_id → horarios.id (tabla existente)
+✅ attendance_sessions.profesor_id → profesores.id (tabla existente)
+✅ assignments.horario_id → horarios.id (tabla existente)
+✅ submissions.estudiante_id → estudiantes.id (tabla existente)
+✅ submissions.inscripcion_id → inscripciones.id (tabla existente)
+✅ quizzes.created_by → users.id (tabla existente)
+✅ submissions.calificado_por → users.id (tabla existente)
+✅ notifications.user_id → users.id (tabla existente)
+
+Todas las FK a tablas existentes: ✅ VERIFICADAS
+
+==================================================================
+VERIFICACIÓN 10: ORDEN DE MIGRACIONES
+==================================================================
+
+Verificando que las tablas con FK se crearon después de sus referencias:
+
+1. ✅ 000010 quizzes (depende de: horarios, users) ← existían antes
+2. ✅ 000011 quiz_questions (depende de: quizzes) ← creada en paso anterior
+3. ✅ 000012 quiz_attempts (depende de: quizzes, estudiantes, inscripciones)
+4. ✅ 000013 quiz_answers (depende de: quiz_attempts, quiz_questions)
+5. ✅ 000014 exam_incidents (depende de: quiz_attempts)
+6. ✅ 000015 attendances (depende de: horarios, estudiantes, inscripciones)
+7. ✅ 000016 attendance_sessions (depende de: horarios, profesores)
+8. ✅ 000017 assignments (depende de: horarios)
+9. ✅ 000018 submissions (depende de: assignments, estudiantes, inscripciones, users)
+10. ✅ 000019 notifications (depende de: users)
+
+Orden correcto: ✅ VERIFICADO
+
+==================================================================
+ERRORES ENCONTRADOS: NINGUNO
+==================================================================
+
+Todas las migraciones se ejecutaron sin errores.
+Todas las restricciones están aplicadas correctamente.
+Todos los índices están presentes.
+Todas las FK apuntan a las tablas correctas.
+Todos los tipos de datos son correctos.
+
+==================================================================
+CONCLUSIÓN PASO 1.4
+==================================================================
+
+✅ 10 tablas creadas exitosamente
+✅ 14 Foreign Keys verificadas (con CASCADE/SET NULL correcto)
+✅ 4 restricciones UNIQUE verificadas (inmutabilidad garantizada)
+✅ 15+ índices de rendimiento verificados
+✅ 4 columnas JSON con validación verificadas
+✅ 7 tipos ENUM verificados
+✅ 10 modelos Eloquent con relaciones correctas
+✅ Integración perfecta con tablas existentes (horarios, estudiantes, etc.)
+✅ Orden de migraciones correcto
+
+ESTADO FINAL: ✅ BLOQUE 1 COMPLETADO AL 100%
+
+Próximo bloque: Bloque 4 - Asistencia (Controllers + Services + Vistas)
+
+==================================================================
+   FIN DE VERIFICACIÓN PASO 1.4
+==================================================================

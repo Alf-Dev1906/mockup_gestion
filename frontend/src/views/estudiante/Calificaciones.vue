@@ -57,10 +57,10 @@
             <thead class="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th class="px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Materia</th>
-                <th class="px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Sem.</th>
-                <th class="px-5 py-4 text-center text-xs font-semibold text-gray-600 uppercase">P1 (30%)</th>
-                <th class="px-5 py-4 text-center text-xs font-semibold text-gray-600 uppercase">P2 (30%)</th>
-                <th class="px-5 py-4 text-center text-xs font-semibold text-gray-600 uppercase">P3 (40%)</th>
+                <th class="px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Periodo</th>
+                <th class="px-5 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Corte 1 (30%)</th>
+                <th class="px-5 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Corte 2 (30%)</th>
+                <th class="px-5 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Corte 3 (40%)</th>
                 <th class="px-5 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Final</th>
                 <th class="px-5 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Estado</th>
               </tr>
@@ -78,18 +78,21 @@
                     <span class="bg-indigo-100 text-indigo-700 text-xs font-mono font-bold px-2 py-0.5 rounded">
                       {{ c.codigo }}
                     </span>
-                    <span class="font-medium text-gray-900 text-sm">{{ c.nombre }}</span>
+                    <div>
+                      <p class="font-medium text-gray-900 text-sm">{{ c.materia }}</p>
+                      <p class="text-xs text-gray-500">{{ c.profesor }}</p>
+                    </div>
                   </div>
                 </td>
-                <td class="px-5 py-4 text-center text-sm text-gray-600">{{ c.semestre }}</td>
-                <td class="px-5 py-4 text-center text-sm font-semibold" :class="notaColor(c.parcial1)">
-                  {{ c.parcial1 ?? '—' }}
+                <td class="px-5 py-4 text-center text-xs text-gray-600">{{ c.periodo || 'N/A' }}</td>
+                <td class="px-5 py-4 text-center text-sm font-semibold" :class="notaColor(c.nota_corte_1)">
+                  {{ c.nota_corte_1 !== null ? Number(c.nota_corte_1).toFixed(2) : '—' }}
                 </td>
-                <td class="px-5 py-4 text-center text-sm font-semibold" :class="notaColor(c.parcial2)">
-                  {{ c.parcial2 ?? '—' }}
+                <td class="px-5 py-4 text-center text-sm font-semibold" :class="notaColor(c.nota_corte_2)">
+                  {{ c.nota_corte_2 !== null ? Number(c.nota_corte_2).toFixed(2) : '—' }}
                 </td>
-                <td class="px-5 py-4 text-center text-sm font-semibold" :class="notaColor(c.parcial3)">
-                  {{ c.parcial3 ?? '—' }}
+                <td class="px-5 py-4 text-center text-sm font-semibold" :class="notaColor(c.nota_corte_3)">
+                  {{ c.nota_corte_3 !== null ? Number(c.nota_corte_3).toFixed(2) : '—' }}
                 </td>
                 <td class="px-5 py-4 text-center">
                   <span v-if="c.nota_final !== null" class="text-base font-bold" :class="notaColor(c.nota_final, 10)">
@@ -101,9 +104,9 @@
                   <span v-if="c.nota_final !== null"
                     class="px-2 py-1 rounded-full text-xs font-semibold"
                     :class="c.nota_final >= 10 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
-                    {{ c.nota_final >= 10 ? 'Aprobado' : 'Reprobado' }}
+                    {{ c.nota_final >= 10 ? '✓ Aprobado' : '✗ Reprobado' }}
                   </span>
-                  <span v-else class="text-xs text-gray-400">—</span>
+                  <span v-else class="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">⏳ Cursando</span>
                 </td>
               </tr>
             </tbody>
@@ -128,7 +131,30 @@ const notaColor = (nota, umbral = 10) => {
 }
 
 onMounted(async () => {
-  try { const { data: res } = await api.get('/estudiante/calificaciones'); data.value = res }
+  try { 
+    const { data: res } = await api.get('/estudiante/calificaciones')
+    const apiData = res.data || res // Soporte para respuesta con wrapper
+    
+    // Calcular resumen
+    const califs = Array.isArray(apiData) ? apiData : []
+    const conNota = califs.filter(c => c.nota_final !== null && c.nota_final !== undefined)
+    const aprobadas = conNota.filter(c => c.nota_final >= 10).length
+    const reprobadas = conNota.filter(c => c.nota_final < 10).length
+    const pendientes = califs.length - conNota.length
+    const promedio = conNota.length > 0 
+      ? conNota.reduce((sum, c) => sum + Number(c.nota_final), 0) / conNota.length 
+      : 0
+    
+    data.value = {
+      calificaciones: califs,
+      resumen: {
+        promedio,
+        aprobadas,
+        reprobadas,
+        pendientes,
+      }
+    }
+  }
   finally { loading.value = false }
 })
 </script>

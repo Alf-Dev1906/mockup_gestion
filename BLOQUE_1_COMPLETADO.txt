@@ -1,0 +1,373 @@
+==================================================================
+   BLOQUE 1 - BASE DE DATOS Y MIGRACIONES - COMPLETADO
+   Fecha: Septiembre 7, 2026
+==================================================================
+
+ESTADO: ✅ COMPLETADO 100%
+
+==================================================================
+PASO 1.1 - MIGRACIONES (10 ARCHIVOS CREADOS)
+==================================================================
+
+Ubicación: backend/database/migrations/
+
+1. ✅ 2026_01_01_000010_create_quizzes_table.php
+   Campos: id, horario_id (FK), titulo, descripcion, tipo (ENUM),
+           instrucciones, duracion_minutos, intentos_permitidos,
+           advertencias_max, fecha_inicio, fecha_fin, visible_desde,
+           estado (ENUM), orden_aleatorio, mostrar_resultado_inmediato,
+           created_by (FK->users), timestamps
+   Índices: horario_id, estado
+   Relación: FK a horarios (cascadeOnDelete)
+
+2. ✅ 2026_01_01_000011_create_quiz_questions_table.php
+   Campos: id, quiz_id (FK, cascade), orden, tipo (ENUM), enunciado (TEXT),
+           contenido (JSON), puntos (DECIMAL), obligatoria (BOOL),
+           retroalimentacion, archivo_url, timestamps
+   Índices: quiz_id, orden
+   JSON flexible: soporta selección, verdadero/falso, relación_columnas,
+                  espacios, multimedia
+
+3. ✅ 2026_01_01_000012_create_quiz_attempts_table.php
+   Campos: id, quiz_id (FK, cascade), estudiante_id (FK, cascade),
+           inscripcion_id (FK), estado (ENUM), inicio_at, fin_at,
+           tiempo_restante_seg, nota_obtenida, nota_maxima,
+           ip_address, user_agent, advertencias_count,
+           auto_enviado (BOOL), timestamps
+   Restricción ÚNICA: (quiz_id, estudiante_id) - cumple con intentos=1
+   Índices: estado, estudiante_id
+
+4. ✅ 2026_01_01_000013_create_quiz_answers_table.php
+   Campos: id, attempt_id (FK, cascade), question_id (FK, cascade),
+           respuesta (JSON), es_correcta (BOOL nullable),
+           puntos_obtenidos, archivo_url, timestamps
+   Índices: attempt_id, question_id
+   JSON flexible: respuesta agnóstica al tipo de pregunta
+
+5. ✅ 2026_01_01_000014_create_exam_incidents_table.php
+   Campos: id, attempt_id (FK, cascade), tipo (ENUM), descripcion,
+           metadata (JSON nullable), ocurrido_at (DATETIME), timestamps
+   Tipos: cambio_pestana, perdida_foco, pantalla_completa,
+          advertencia_enviada, auto_submit
+   Índices: attempt_id, tipo, ocurrido_at
+
+6. ✅ 2026_01_01_000015_create_attendances_table.php
+   Campos: id, horario_id (FK), estudiante_id (FK), inscripcion_id (FK),
+           session_date (DATE), codigo_usado, verificado_at,
+           ip_address, estatus (ENUM), observacion, timestamps
+   Restricción ÚNICA CRITICA: (horario_id, estudiante_id, session_date)
+           → ASISTENCIA INMUTABLE (no se puede duplicar por estudiante/día)
+   Índices: session_date, estatus
+
+7. ✅ 2026_01_01_000016_create_attendance_sessions_table.php
+   Campos: id, horario_id (FK), profesor_id (FK), session_date (DATE),
+           codigo_dinamico (VARCHAR10), codigo_expira_at,
+           abierta (BOOL), cierre_automatico_at,
+           total_presentes (INT), timestamps
+   Restricción ÚNICA: (horario_id, session_date)
+   Índices: session_date, abierta
+
+8. ✅ 2026_01_01_000017_create_assignments_table.php
+   Campos: id, horario_id (FK), titulo, descripcion, instrucciones,
+           archivo_guia_url, fecha_apertura, fecha_limite,
+           permitir_entrega_tardia (BOOL), peso_calificacion,
+           nota_maxima (default 20), tipos_permitidos (default pdf,zip,docx),
+           tamano_maximo_mb (default 10), estatus (ENUM),
+           timestamps
+   Índices: horario_id, estatus, fecha_limite
+
+9. ✅ 2026_01_01_000018_create_submissions_table.php
+   Campos: id, assignment_id (FK, cascade), estudiante_id (FK),
+           inscripcion_id (FK), archivo_url, nombre_archivo_original,
+           tamano_bytes, es_tardia (BOOL), nota,
+           retroalimentacion, calificado_at, calificado_por (FK nullable),
+           timestamps
+   Restricción ÚNICA: (assignment_id, estudiante_id)
+   Índices: estudiante_id, es_tardia
+
+10. ✅ 2026_01_01_000019_create_notifications_table.php
+    Campos: id, user_id (FK, cascade), tipo (VARCHAR50), titulo,
+            mensaje, url_accion nullable, leida (BOOL default false),
+            leida_at, datos (JSON nullable), timestamps
+    Índice CRÍTICO: (user_id, leida) - para rendimiento de campana
+    Índice: created_at
+
+==================================================================
+PASO 1.2 - MODELOS ELOQUENT (10 ARCHIVOS CREADOS)
+==================================================================
+
+Ubicación: backend/app/Models/
+
+1. ✅ Quiz.php
+   Relaciones: belongsTo(Horario), hasMany(Preguntas),
+               hasMany(Intentos), belongsTo(User, created_by)
+   Scopes: publicados(), borrador(), disponibles(), porHorario()
+   Métodos: tieneIntentosDisponibles(), intentoActual()
+   Casts: Todas las fechas como datetime, booleanos
+
+2. ✅ QuizQuestion.php
+   Relaciones: belongsTo(Quiz), hasMany(Respuestas)
+   Scopes: obligatorias(), porTipo(), ordenadas()
+   Métodos: getPuntuacionMaxima(), getOpcionesCorrectas()
+   Casts: contenido como array (JSON flexible)
+
+3. ✅ QuizAttempt.php
+   Relaciones: belongsTo(Quiz), belongsTo(Estudiante),
+               belongsTo(Inscripcion), hasMany(Respuestas),
+               hasMany(Incidencias)
+   Scopes: enProgreso(), enviados(), calificados(),
+           porEstudiante(), porQuiz()
+   Métodos: getPorcentajeCorrecciones(), estaVencido(),
+            obtenerTiempoRestante(), registrarAdvertencia(),
+            auto_enviar()
+   Lógica CRÍTICA: Auto-envío al alcanzar advertencias_max
+
+4. ✅ QuizAnswer.php
+   Relaciones: belongsTo(QuizAttempt), belongsTo(QuizQuestion)
+   Scopes: correctas(), incorrectas(), sinCalificar(), porIntento()
+   Métodos: marcarCorrecta(), marcarIncorrecta()
+   Casts: respuesta como array (agnóstico al tipo pregunta)
+
+5. ✅ ExamIncident.php
+   Relaciones: belongsTo(QuizAttempt)
+   Scopes: cambioDePestana(), perdidaDeFoco(), porTipo(),
+           recientes(), ordenadas()
+   Métodos: obtenerDescripcionTipo()
+   Casts: metadata como array, ocurrido_at como datetime
+
+6. ✅ Attendance.php
+   Relaciones: belongsTo(Horario), belongsTo(Estudiante),
+               belongsTo(Inscripcion)
+   Scopes: presentes(), ausentes(), tardanzas(), justificadas(),
+           porHorario(), porEstudiante(), porFecha(), entreFechas(),
+           verificadas()
+   NOTA IMPORTANTE: Restricción UNIQUE hace tabla INMUTABLE
+
+7. ✅ AttendanceSession.php
+   Relaciones: belongsTo(Horario), belongsTo(Profesor),
+               hasMany(Asistencias)
+   Scopes: abiertas(), cerradas(), codigoVigente(), porHorario(),
+           porProfesor(), recientes()
+   Métodos: esCodigoValido(), cerrar(), generarCodigoDinamico(),
+            incrementarPresentes()
+
+8. ✅ Assignment.php
+   Relaciones: belongsTo(Horario), hasMany(Entregas)
+   Scopes: publicadas(), borrador(), cerradas(), disponibles(),
+           porHorario(), proximasAVencer(), vencidas()
+   Métodos: estaAbierta(), esEntregaTardia(), entregasATiempo(),
+            entregasTardias(), entregasSinCalificar(),
+            entregasCalificadas(), promedioCalificaciones(),
+            getTiposPermitidosArray()
+
+9. ✅ Submission.php
+   Relaciones: belongsTo(Assignment), belongsTo(Estudiante),
+               belongsTo(Inscripcion), belongsTo(User, calificadoPor)
+   Scopes: tardias(), aTiempo(), calificadas(), sinCalificar(),
+           porEstudiante(), porTarea(), calificadasPorProfesor()
+   Métodos: calificar(), getInfoArchivo(), formatearTamano(),
+            puedeSerModificada()
+   Lógica: Verificación de validación de archivo y estado
+
+10. ✅ Notification.php
+    Relaciones: belongsTo(User)
+    Scopes: leidas(), noLeidas(), porUsuario(), porTipo(),
+            recientes(), noLeidasDelUsuario()
+    Métodos: marcarComoLeida(), marcarComoNoLeida(),
+             obtenerContadorNoLeidas(), ultimasDelUsuario(),
+             crearNotificacionExamen(), crearNotificacionTarea(),
+             crearNotificacionCalificacion(), crearNotificacion()
+    Índice CRÍTICO: (user_id, leida) para campana en tiempo real
+
+==================================================================
+PASO 1.3 - MIGRACIONES EJECUTADAS EXITOSAMENTE
+==================================================================
+
+Comando ejecutado:
+  C:\xampp\php\php.exe artisan migrate --verbose
+
+Resultado:
+  ✅ 2026_01_01_000010 quizzes                      382.14ms DONE
+  ✅ 2026_01_01_000011 quiz_questions               219.92ms DONE
+  ✅ 2026_01_01_000012 quiz_attempts                305.45ms DONE
+  ✅ 2026_01_01_000013 quiz_answers                 195.39ms DONE
+  ✅ 2026_01_01_000014 exam_incidents               138.15ms DONE
+  ✅ 2026_01_01_000015 attendances                  349.55ms DONE
+  ✅ 2026_01_01_000016 attendance_sessions          210.38ms DONE
+  ✅ 2026_01_01_000017 assignments                  137.74ms DONE
+  ✅ 2026_01_01_000018 submissions                  353.75ms DONE
+  ✅ 2026_01_01_000019 notifications                120.38ms DONE
+
+TOTAL: 10/10 migraciones completadas exitosamente
+TIEMPO TOTAL: ~2.3 segundos
+
+Base de datos: sge_db (MariaDB via XAMPP)
+
+Verificación de tablas en BD:
+  ✅ assignments
+  ✅ attendance_sessions
+  ✅ attendances
+  ✅ exam_incidents
+  ✅ notifications
+  ✅ quiz_answers
+  ✅ quiz_attempts
+  ✅ quiz_questions
+  ✅ quizzes
+  ✅ submissions
+
+==================================================================
+RESTRICCIONES Y CARACTERÍSTICAS CRITICAS VERIFICADAS
+==================================================================
+
+1. ASISTENCIA INMUTABLE
+   Tabla: attendances
+   Restricción: UNIQUE(horario_id, estudiante_id, session_date)
+   Efecto: No se pueden registrar dos asistencias del mismo
+           estudiante en el mismo horario para la misma fecha
+   ✅ VERIFICADA en BD
+
+2. INTENTOS LIMITADOS POR ESTUDIANTE
+   Tabla: quiz_attempts
+   Restricción: UNIQUE(quiz_id, estudiante_id)
+   Efecto: Cuando intentos_permitidos=1 (por defecto),
+           solo un intento por estudiante
+   ✅ VERIFICADA en BD
+
+3. INDICES DE RENDIMIENTO CRÍTICO
+   notifications: INDEX(user_id, leida)
+   Purpose: Campana de notificaciones en tiempo real
+   ✅ VERIFICADA en BD
+
+4. CASCADAS CASCADE ON DELETE
+   Todas las relaciones internas (quiz -> questions -> answers -> incidents)
+   tienen cascadeOnDelete para integridad referencial
+   ✅ VERIFICADAS en BD
+
+5. TIPOS DE DATOS CRÍTICOS
+   - Enum para estados (borrador/publicado/cerrado, etc.)
+   - JSON para contenido flexible de preguntas
+   - JSON para respuestas agnósticas
+   - JSON para metadata de incidencias
+   ✅ VERIFICADAS en BD
+
+==================================================================
+RELACIONES ENTRE TABLAS (GRAFO DE INTEGRIDAD)
+==================================================================
+
+horarios (tabla existente)
+  ├─→ quizzes (1:N)
+  │   ├─→ quiz_questions (1:N, cascade)
+  │   │   └─→ quiz_answers (1:N, cascade)
+  │   └─→ quiz_attempts (1:N, cascade)
+  │       ├─→ quiz_answers (1:N, cascade)
+  │       └─→ exam_incidents (1:N, cascade)
+  ├─→ assignments (1:N)
+  │   └─→ submissions (1:N, cascade)
+  ├─→ attendances (1:N)
+  └─→ attendance_sessions (1:N)
+
+estudiantes (tabla existente)
+  ├─→ quiz_attempts
+  ├─→ attendances
+  └─→ submissions
+
+users (tabla existente)
+  ├─→ quizzes (created_by)
+  └─→ notifications
+
+==================================================================
+PARÁMETRO MADRE: PERMISOS Y ACCESO
+==================================================================
+
+Implementación en nivel de modelo (Laravel Policies):
+  Será hecha en Paso 2.1 cuando se creen los Controllers
+
+PERMISOS CODIFICADOS EN MIGRACIONES:
+  ✅ Tablas permiten NULL donde corresponde para flexibilidad
+  ✅ Tipos ENUM previenen valores inválidos
+  ✅ FKs obligan integridad referencial
+  ✅ UNIQUEs previenen duplicados (asistencia, intentos)
+  ✅ Índices optimizan queries de acceso control
+
+==================================================================
+SIGUIENTE PASO: BLOQUE 4 - ASISTENCIA (ya con BD lista)
+==================================================================
+
+El próximo bloque creará:
+  1. AttendanceController (backend)
+  2. AttendanceCodeService (backend - generar códigos)
+  3. AsistenciaPanel.vue (frontend - profesor)
+  4. AsistenciaMarcar.vue (frontend - estudiante)
+  5. Rutas en api.php
+  6. Router en Vue
+  7. Menu en AdminLayout
+
+Con la BD completamente lista, el backend puede codificarse
+sin cambios posteriores de migraciones.
+
+==================================================================
+VERIFICACIÓN FINAL: INTEGRIDAD REFERENCIAL
+==================================================================
+
+Test 1: Foreign Keys
+  quiz_attempts.quiz_id → quizzes.id ✅
+  quiz_questions.quiz_id → quizzes.id ✅
+  quiz_answers.attempt_id → quiz_attempts.id ✅
+  quiz_answers.question_id → quiz_questions.id ✅
+  exam_incidents.attempt_id → quiz_attempts.id ✅
+  attendances.horario_id → horarios.id ✅
+  attendances.estudiante_id → estudiantes.id ✅
+  attendance_sessions.horario_id → horarios.id ✅
+  assignments.horario_id → horarios.id ✅
+  submissions.assignment_id → assignments.id ✅
+  notifications.user_id → users.id ✅
+
+Test 2: Restrict on Delete (CASCADE)
+  Borrar quiz → borra questions, attempts, answers, incidents ✅
+  Borrar assignment → borra submissions ✅
+  Borrar user → borra notificaciones ✅
+
+Test 3: Unique Constraints
+  attendances: (horario_id, estudiante_id, session_date) ✅
+  quiz_attempts: (quiz_id, estudiante_id) ✅
+  submissions: (assignment_id, estudiante_id) ✅
+  attendance_sessions: (horario_id, session_date) ✅
+
+Test 4: Índices de Rendimiento
+  quizzes: (horario_id), (estado) ✅
+  quiz_questions: (quiz_id), (orden) ✅
+  quiz_attempts: (estado), (estudiante_id) ✅
+  notifications: (user_id, leida), (created_at) ✅
+
+==================================================================
+ARCHIVO MODIFICADOS / CREADOS EN ESTA SESIÓN
+==================================================================
+
+MIGRACIONES (10):
+  ✅ backend/database/migrations/2026_01_01_000010_create_quizzes_table.php
+  ✅ backend/database/migrations/2026_01_01_000011_create_quiz_questions_table.php
+  ✅ backend/database/migrations/2026_01_01_000012_create_quiz_attempts_table.php
+  ✅ backend/database/migrations/2026_01_01_000013_create_quiz_answers_table.php
+  ✅ backend/database/migrations/2026_01_01_000014_create_exam_incidents_table.php
+  ✅ backend/database/migrations/2026_01_01_000015_create_attendances_table.php
+  ✅ backend/database/migrations/2026_01_01_000016_create_attendance_sessions_table.php
+  ✅ backend/database/migrations/2026_01_01_000017_create_assignments_table.php
+  ✅ backend/database/migrations/2026_01_01_000018_create_submissions_table.php
+  ✅ backend/database/migrations/2026_01_01_000019_create_notifications_table.php
+
+MODELOS (10):
+  ✅ backend/app/Models/Quiz.php
+  ✅ backend/app/Models/QuizQuestion.php
+  ✅ backend/app/Models/QuizAttempt.php
+  ✅ backend/app/Models/QuizAnswer.php
+  ✅ backend/app/Models/ExamIncident.php
+  ✅ backend/app/Models/Attendance.php
+  ✅ backend/app/Models/AttendanceSession.php
+  ✅ backend/app/Models/Assignment.php
+  ✅ backend/app/Models/Submission.php
+  ✅ backend/app/Models/Notification.php
+
+==================================================================
+   FIN DE BLOQUE 1 - BASE DE DATOS Y MIGRACIONES
+   Estado: 100% COMPLETADO Y VERIFICADO
+==================================================================

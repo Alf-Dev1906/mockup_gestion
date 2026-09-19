@@ -88,6 +88,14 @@
           <NavItem to="/profesor/materias"       icon="📖">Mis Materias</NavItem>
           <NavItem to="/profesor/calificaciones" icon="🎓">Calificaciones</NavItem>
           <NavItem to="/profesor/horario"        icon="🕐">Mi Horario</NavItem>
+          <NavSection label="Aula Virtual" />
+          <NavItem to="/profesor/aula-virtual"   icon="🖥️">Aula Virtual</NavItem>
+          <NavItem to="/profesor/quizzes"        icon="📝">Exámenes</NavItem>
+          <NavItem to="/profesor/tareas"         icon="📋">Tareas</NavItem>
+          <NavItem to="/profesor/asistencia"     icon="✅">Asistencia</NavItem>
+          <NavItem to="/profesor/auditoria"      icon="🔍">Auditoría</NavItem>
+          <NavSection label="Perfil" />
+          <NavItem to="/profesor/perfil"         icon="👤">Mi Perfil</NavItem>
           <NavSection label="Sitio" />
           <NavItem to="/" icon="🌐">Sitio Público</NavItem>
         </template>
@@ -108,6 +116,11 @@
             <NavItem to="/estudiante/inscripcion"    icon="📝">Inscripción</NavItem>
             <NavItem to="/estudiante/horarios"       icon="🕐">Mis Horarios</NavItem>
             <NavItem to="/estudiante/calificaciones" icon="🎓">Mis Calificaciones</NavItem>
+            <NavSection label="Aula Virtual" />
+            <NavItem to="/estudiante/aula-virtual"   icon="🖥️">Aula Virtual</NavItem>
+            <NavItem to="/estudiante/quizzes"        icon="📝">Mis Exámenes</NavItem>
+            <NavItem to="/estudiante/tareas"         icon="📋">Mis Tareas</NavItem>
+            <NavItem to="/estudiante/asistencia"     icon="✅">Asistencia</NavItem>
             <NavSection label="Perfil" />
             <NavItem to="/estudiante/perfil"         icon="👤">Mi Perfil</NavItem>
           </template>
@@ -147,6 +160,10 @@
             <span class="font-medium truncate" :class="breadcrumbColor">{{ routeLabel }}</span>
           </div>
           <div class="flex-1" />
+          
+          <!-- Campana de notificaciones (solo para profesor y estudiante) -->
+          <NotificationBell v-if="mostrarNotificaciones" />
+          
           <!-- Badge de rol coloreado -->
           <span class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full" :class="roleBadge">
             {{ roleIcon }} {{ auth.userRoleName || auth.userRole }}
@@ -168,6 +185,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import NavItem from '@/components/NavItem.vue'
 import NavSection from '@/components/NavSection.vue'
+import NotificationBell from '@/components/NotificationBell.vue'
 
 const auth         = useAuthStore()
 const router       = useRouter()
@@ -177,6 +195,11 @@ const sidebarOpen  = ref(false)
 const initials = computed(() => {
   const name = auth.userName ?? ''
   return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+})
+
+// Mostrar notificaciones solo para profesor y estudiante
+const mostrarNotificaciones = computed(() => {
+  return auth.isProfesor || auth.isEstudiante
 })
 
 // Colores según rol
@@ -215,6 +238,7 @@ const routeLabels = {
   '/admin/carreras': 'Carreras', '/admin/facultades': 'Facultades',
   '/profesor/dashboard': 'Mi Dashboard', '/profesor/materias': 'Mis Materias',
   '/profesor/calificaciones': 'Calificaciones', '/profesor/horario': 'Mi Horario',
+  '/profesor/perfil': 'Mi Perfil',
   '/estudiante/dashboard': 'Mi Dashboard', '/estudiante/horarios': 'Mis Horarios',
   '/estudiante/calificaciones': 'Mis Calificaciones', '/estudiante/inscripcion': 'Inscripción',
   '/estudiante/solicitud': 'Estado de Solicitud', '/estudiante/perfil': 'Mi Perfil',

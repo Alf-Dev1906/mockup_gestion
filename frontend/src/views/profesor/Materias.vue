@@ -39,11 +39,12 @@
           <div class="px-6 py-4">
             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Horarios</p>
             <div class="flex flex-wrap gap-2">
-              <div v-for="h in grupo.horarios" :key="h.horario_id"
+              <div v-for="h in grupo.horarios" :key="h.id"
                 class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm">
-                <span class="font-semibold text-gray-900">{{ h.dia_semana }}</span>
-                <span class="text-gray-600 ml-2">{{ h.hora_inicio }} – {{ h.hora_fin }}</span>
-                <span v-if="h.aula" class="text-gray-400 ml-2 text-xs">· Aula {{ h.aula.numero }}</span>
+                <span class="font-semibold text-gray-900 capitalize">{{ h.dia_semana }}</span>
+                <span class="text-gray-600 ml-2">{{ formatTime(h.hora_inicio) }} – {{ formatTime(h.hora_fin) }}</span>
+                <span v-if="h.aula" class="text-gray-400 ml-2 text-xs">· {{ h.aula }}</span>
+                <span v-if="h.seccion" class="text-emerald-600 ml-2 text-xs font-semibold">Sec. {{ h.seccion }}</span>
               </div>
             </div>
           </div>
@@ -116,25 +117,29 @@ const panelEstudiantes = ref(false)
 const panelMateria = ref(null)
 const estudiantesMateria = ref([])
 
-// Agrupar horarios por materia
-const materiasAgrupadas = computed(() => {
-  const map = new Map()
-  for (const h of materias.value) {
-    const id = h.materia.id
-    if (!map.has(id)) {
-      map.set(id, {
-        materiaId: id,
-        codigo: h.materia.codigo,
-        nombre: h.materia.nombre,
-        carrera: h.materia.carrera,
-        creditos: h.materia.creditos,
-        horarios: [],
-        totalEstudiantes: 0,
-      })
-    }
-    map.get(id).horarios.push(h)
+// Formatear hora de timestamp a HH:MM
+const formatTime = (timestamp) => {
+  if (!timestamp) return ''
+  try {
+    const date = new Date(timestamp)
+    return date.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false })
+  } catch {
+    return timestamp.substring(0, 5) // Fallback
   }
-  return [...map.values()]
+}
+
+// Agrupar horarios por materia - Adaptado al nuevo formato del backend
+const materiasAgrupadas = computed(() => {
+  // El backend ya envía materias agrupadas con horarios
+  return materias.value.map(m => ({
+    materiaId: m.id,
+    codigo: m.codigo,
+    nombre: m.nombre,
+    carrera: m.carrera,
+    creditos: m.creditos,
+    horarios: m.horarios || [],
+    totalEstudiantes: m.total_estudiantes || 0,
+  }))
 })
 
 async function verEstudiantes(grupo) {
@@ -143,15 +148,18 @@ async function verEstudiantes(grupo) {
   loadingEstudiantes.value = true
   try {
     const { data } = await api.get(`/profesor/materias/${grupo.materiaId}/estudiantes`)
-    estudiantesMateria.value = data
-    grupo.totalEstudiantes = data.length
+    estudiantesMateria.value = data.data || data // Soporte para respuesta con wrapper
+    grupo.totalEstudiantes = estudiantesMateria.value.length
   } finally {
     loadingEstudiantes.value = false
   }
 }
 
 onMounted(async () => {
-  try { const { data } = await api.get('/profesor/materias'); materias.value = data }
+  try { 
+    const { data } = await api.get('/profesor/materias')
+    materias.value = data.data || data // Soporte para respuesta con wrapper {success, data}
+  }
   finally { loading.value = false }
 })
 </script>

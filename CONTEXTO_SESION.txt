@@ -1,0 +1,252 @@
+﻿==================================================================
+   CONTEXTO COMPLETO DE SESION - PARA RETOMAR EN NUEVA VENTANA
+   Proyecto: Sistema de Gestion Universitaria
+   Fecha: Septiembre 2026
+==================================================================
+
+----------------------------------------------------------------
+ESTADO ACTUAL DEL SISTEMA (YA IMPLEMENTADO Y FUNCIONANDO)
+----------------------------------------------------------------
+
+STACK:
+  Backend:  Laravel 11, PHP via XAMPP, puerto 8000
+  Frontend: Vue 3 + Composition API + Tailwind CSS + Pinia, puerto 5173
+  BD:       MySQL via XAMPP
+  Auth:     Laravel Sanctum
+
+COMO LEVANTAR LOS SERVIDORES:
+  Backend:  C:\xampp\php\php.exe artisan serve --port=8000
+            (cwd: c:\Users\danie\Documents\Gestion_uni\backend)
+  Frontend: npm run dev
+            (cwd: c:\Users\danie\Documents\Gestion_uni\frontend)
+  NOTA: php no esta en el PATH global, siempre usar ruta completa XAMPP.
+  El warning "openssl already loaded" es inofensivo, ignorarlo.
+
+CREDENCIALES DE PRUEBA:
+  profesor@universidad.edu.ve    / Profesor2026!    role=profesor        ID=51
+  estudiante@universidad.edu.ve  / Estudiante2026!  role=estudiante      ID=202
+  solicitante@universidad.edu.ve / Solicitante2026! role=estudiante      estatus=inactivo
+  admin@universidad.edu.ve       / Admin2026!       role=administrativo
+  soporte@universidad.edu.ve     / Soporte2026!     role=soporte_it
+  developer@universidad.edu.ve   / Dev2026!         role=desarrollador
+
+DATOS EN BD:
+  Estudiante ID 202: matricula=2026-999999, carrera_id=1, semestre=5,
+                     indice=16.50, creditos=72, 5 inscripciones activas
+  Profesor ID 51: 5 materias asignadas, 30 estudiantes totales
+  Total en sistema: 100+ alumnos, 26 profesores, muchas materias/aulas/horarios
+
+----------------------------------------------------------------
+MODELOS ELOQUENT EXISTENTES (PARAMETRO MADRE - NUNCA ROMPER)
+----------------------------------------------------------------
+
+  Estudiante
+    Campos: carrera_id, cedula, nombre, apellido, email, matricula,
+            semestre_actual, indice_academico, creditos_aprobados, estatus
+    Relaciones: belongsTo(Carrera), hasMany(Inscripcion),
+                belongsToMany(Horario) via tabla inscripciones
+
+  Inscripcion
+    Campos: estudiante_id, horario_id, periodo_academico, estatus,
+            nota_parcial_1, nota_parcial_2, nota_parcial_3, nota_final,
+            inasistencias, porcentaje_asistencia
+    Relaciones: belongsTo(Estudiante), belongsTo(Horario), hasOne(Calificacion)
+
+  Horario
+    Campos: materia_id, profesor_id, aula_id, seccion, periodo_academico,
+            dia_semana, hora_inicio, hora_fin, cupo_maximo, cupo_actual
+    Relaciones: belongsTo(Materia), belongsTo(Profesor), belongsTo(Aula),
+                hasMany(Inscripcion), belongsToMany(Estudiante)
+
+  Profesor
+    Campos: facultad_id, cedula, codigo_empleado, categoria,
+            especialidad, titulo_academico, nombre, apellido, email
+    Relaciones: belongsTo(Facultad), hasMany(Horario)
+
+  REGLA DE ORO: El Aula Virtual se conecta SIEMPRE via horario_id.
+  Jamas directamente a materia_id. Cada examen, tarea y lista de
+  asistencia pertenece a un horario_id especifico.
+
+----------------------------------------------------------------
+ARCHIVOS CRITICOS DEL PROYECTO
+----------------------------------------------------------------
+
+  frontend/src/layouts/AdminLayout.vue   - Layout con menu lateral y roles
+  frontend/src/router/index.js           - Rutas Vue (agregar aqui nuevas rutas)
+  backend/routes/api.php                 - Rutas API Laravel (agregar aqui)
+  backend/app/Http/Controllers/Api/      - Todos los controladores
+  backend/app/Models/                    - Modelos Eloquent
+
+PATRON DE RESPUESTA API (OBLIGATORIO EN TODO EL CODIGO NUEVO):
+  Backend envia:   { "success": true, "data": {...} }
+  Frontend accede: res.data.data || res.data  (soporte doble wrapper)
+
+MIDDLEWARE DE ROLES (OBLIGATORIO EN RUTAS NUEVAS):
+  middleware('role:profesor')       para rutas /profesor/*
+  middleware('role:estudiante')     para rutas /estudiante/*
+  middleware('role:administrativo') para rutas /admin/*
+  middleware('role:soporte_it')     para rutas /soporte/*
+  middleware('role:desarrollador')  para rutas /dev/*
+
+DETECCION DE VINCULACION user <-> profesor/estudiante:
+  Se hace por columna email (no por user_id).
+  Ejemplo: Profesor::where('email', $user->email)->first()
+  Esto es critico: NO usar user_id, usar email.
+
+----------------------------------------------------------------
+VISTAS YA IMPLEMENTADAS Y FUNCIONANDO
+----------------------------------------------------------------
+
+  ESTUDIANTE (/estudiante/*):
+    dashboard       - Banner con nombre/carrera/facultad/semestre +
+                      4 stats cards: materias inscritas, creditos,
+                      indice academico, semestre actual
+    perfil          - Datos personales completos (cedula, telefono, etc.)
+    inscripcion     - Cards por materia con codigo, profesor, horario
+    horarios        - Tabla semanal por dia + cards resumen por materia
+    calificaciones  - Resumen (promedio/aprobadas/reprobadas) +
+                      barra de progreso + tabla con 3 cortes
+
+  PROFESOR (/profesor/*):
+    dashboard       - 3 stats: materias, estudiantes, calificaciones pendientes
+    perfil          - Info personal + info laboral + 2 stats (NUEVO)
+    materias        - Materias asignadas con lista de estudiantes
+    horario         - 4 stats + tabla semanal + resumen por materia (MEJORADO)
+    calificaciones  - Header con gradiente + 4 stats en vivo + tabla con
+                      columna Estado (Aprobado/Reprobado/Pendiente) (MEJORADO)
+
+  SOLICITANTE (role=estudiante pero estatus=inactivo):
+    Menu limitado: solo "Estado de Solicitud" y "Mi Perfil"
+    Resto de opciones deshabilitadas hasta aprobacion
+    Vista solicitud: datos mockup SOL-000203, estado=pendiente
+
+  ADMIN/SOPORTE/DEV: Vistas de gestion completas ya existentes
+
+----------------------------------------------------------------
+MODULO DE AULA VIRTUAL - ESTADO: PLANIFICADO, NO INICIADO
+----------------------------------------------------------------
+
+ARCHIVO DE REFERENCIA COMPLETO:
+  c:\Users\danie\Documents\Gestion_uni\AULA_VIRTUAL_HOJA_DE_RUTA.txt
+  (1133 lineas - contiene el plan tecnico detallado bloque por bloque)
+
+TABLAS NUEVAS A CREAR (NINGUNA EXISTE AUN EN BD):
+  quizzes              - Examenes/quizzes por horario
+  quiz_questions       - Preguntas con contenido JSON flexible
+  quiz_attempts        - Intentos del estudiante
+  quiz_answers         - Respuestas del estudiante por pregunta
+  exam_incidents       - Incidencias anti-copia (cambio de pestana, etc.)
+  attendances          - Registro de asistencia (INMUTABLE por UNIQUE)
+  attendance_sessions  - Sesiones de clase abiertas por el profesor
+  assignments          - Tareas publicadas por el profesor
+  submissions          - Entregas de los estudiantes
+  notifications        - Centro de notificaciones global
+
+MODELOS DE IA ASIGNADOS (JERARQUIA DE 3 NIVELES):
+  Nivel 1 - Sonnet 4.5 / Sonnet 4  (1.3x) - Soporta imagenes: SI
+    Cuando: integracion con archivos existentes, errores complejos,
+    cualquier cambio en api.php/router/AdminLayout, modelos Eloquent
+    que se conectan al sistema actual, pruebas de flujo completo.
+
+  Nivel 2 - Claude Haiku 4.5  (0.4x) - Soporta imagenes: SI
+    Cuando: logica nueva de BD/backend/frontend que no toca archivos
+    existentes, esquemas relacionales, algoritmos, composables Vue,
+    Pinia stores, cualquier sesion donde el usuario pueda compartir imagen.
+
+  Nivel 3 - Qwen3 Coder Next  (0.05x) - Soporta imagenes: NO
+    Cuando: transcripcion pura de esquema ya definido en texto,
+    migraciones PHP repetitivas, maquetado Tailwind estatico,
+    formularios simples. Solo si NO se esperan imagenes en la sesion.
+
+  DESCARTADOS (sin soporte de imagenes):
+    Deepseek v3.2, MiniMax M2.5, MiniMax M2.1, GLM-5
+
+----------------------------------------------------------------
+PERMISOS POR ROL EN AULA VIRTUAL (PARAMETRO MADRE)
+----------------------------------------------------------------
+
+  ESTUDIANTE:
+    - Ver examenes publicados de sus horarios inscritos
+    - Tomar examen (intentos segun configuracion del quiz)
+    - CRITICO: NO puede ver preguntas/respuestas del examen despues
+      de enviarlo hasta que el profesor cargue la correccion
+    - Ver su nota solo cuando el profesor la carga
+    - Ver sus tareas, entregas propias y asistencia propia
+    - No puede ver datos de otros estudiantes
+
+  PROFESOR:
+    - CRUD completo de examenes de SUS horarios unicamente
+    - Ver todos los intentos y reportes anti-copia de sus alumnos
+    - Calificar examenes y cargar notas
+    - Crear/editar tareas, ver entregas, calificar entregas
+    - Gestionar asistencia (abrir sesion, cerrar, justificar ausencias)
+    - Acceso a consola de auditoria de sus clases
+    - NO puede ver examenes ni datos de horarios de otros profesores
+
+  ADMINISTRATIVO (solo lectura):
+    - Ver TODO: clases, examenes, preguntas, intentos, notas,
+      tareas, entregas, asistencias de TODA la institucion
+    - NO puede modificar absolutamente nada
+    - Proposito: auditoria y verificacion de credibilidad institucional
+
+  SOPORTE_IT:
+    - Acceso total para diagnostico de problemas
+    - Ve todo lo que ve administrativo
+    - Puede modificar registros con error critico (con log de auditoria)
+    - Capa de manejo de la plataforma
+
+  DESARROLLADOR:
+    - Acceso total sin restricciones a todo el modulo
+
+  IMPLEMENTACION TECNICA:
+    - Laravel Policies para cada modelo del Aula Virtual
+    - Verificacion de rol en cada metodo del controlador
+    - Endpoints de solo-lectura separados para admin/soporte/dev
+
+----------------------------------------------------------------
+PROXIMOS PASOS EN ORDEN ESTRICTO
+----------------------------------------------------------------
+
+  FASE 1 - BASE (empezar aqui en proxima sesion):
+    BLOQUE 1: BD y Migraciones
+      Paso 1.1 (Haiku 4.5):   Crear los 10 archivos de migracion PHP
+                               Convencion: 2026_01_01_0000NN_create_*.php
+                               El esquema completo esta en la Hoja de Ruta
+      Paso 1.2 (Sonnet 4.5):  Crear los 10 modelos Eloquent con relaciones,
+                               fillable, casts (JSON->array) y scopes
+      Paso 1.3 (Sonnet 4.5):  php artisan migrate + verificar BD + corregir
+                               Comando: C:\xampp\php\php.exe artisan migrate
+
+    BLOQUE 4: Asistencia inmutable
+      Backend (Haiku 4.5):    AttendanceController + AttendanceCodeService
+      Frontend (Qwen3):       AsistenciaPanel.vue (profesor) + AsistenciaMarcar.vue
+      Integracion (Sonnet):   Rutas en api.php + router + menu
+
+    BLOQUE 5: Tareas y notificaciones
+      Backend (Haiku 4.5):    AssignmentController + NotificationController
+      Frontend (Qwen3):       Tareas.vue (prof+est) + NotificationBell.vue
+      Integracion (Sonnet):   Rutas + AdminLayout bell + polling store
+
+  FASE 2 - EXAMENES:
+    BLOQUE 2: Motor de examenes (Haiku + Qwen3 + Sonnet)
+    BLOQUE 3: Proctoring anti-copia (Haiku + Sonnet)
+
+  FASE 3 - CIERRE:
+    BLOQUE 6: Consola auditoria docente (Qwen3 + Sonnet)
+    BLOQUE 7: Integracion final y navegacion (Sonnet)
+
+----------------------------------------------------------------
+FRASE DE INICIO PARA NUEVA SESION
+----------------------------------------------------------------
+
+  Pegar esto al inicio de la nueva sesion:
+
+  "Retomamos el proyecto. Lee CONTEXTO_SESION.txt y
+   AULA_VIRTUAL_HOJA_DE_RUTA.txt que estan en la raiz
+   del workspace. El sistema base ya funciona. Vamos a
+   implementar el Bloque 1 del Aula Virtual: crear las
+   10 migraciones y los 10 modelos Eloquent."
+
+==================================================================
+   FIN DEL CONTEXTO DE SESION
+==================================================================

@@ -15,8 +15,18 @@ use App\Http\Controllers\Api\DesarrolladorController;
 use App\Http\Controllers\Api\SoporteController;
 use App\Http\Controllers\Api\AdministrativoController;
 use App\Http\Controllers\Api\EstudianteDashboardController;
+use App\Http\Controllers\Api\ProfesorDashboardController;
+use App\Http\Controllers\Api\LogController;
 use App\Http\Controllers\Api\RegistroController;
 use App\Http\Controllers\Api\AdmisionController;
+use App\Http\Controllers\Api\QuizController;
+use App\Http\Controllers\Api\QuizAttemptController;
+use App\Http\Controllers\Api\QuizResultController;
+use App\Http\Controllers\Api\AttendanceController;
+use App\Http\Controllers\Api\AssignmentController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\AuditoriaController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -203,6 +213,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/aulas', [AulaController::class, 'index']);
     Route::get('/aulas/{id}', [AulaController::class, 'show']);
     
+    // Notificaciones (para todos los autenticados)
+    Route::prefix('notificaciones')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/no-leidas-count', [NotificationController::class, 'contadorNoLeidas']); // Para polling
+        Route::get('/tipos-disponibles', [NotificationController::class, 'tiposDisponibles']);
+        Route::post('/{notification}/leer', [NotificationController::class, 'marcarLeida']);
+        Route::post('/leer-todas', [NotificationController::class, 'marcarTodasLeidas']);
+        Route::delete('/{notification}', [NotificationController::class, 'eliminar']);
+        Route::post('/eliminar-todas', [NotificationController::class, 'eliminarTodasLeidas']);
+    });
+    
     // Estudiantes (lectura para profesor y admin)
     Route::middleware('role:profesor')->group(function () {
         Route::get('/estudiantes', [EstudianteController::class, 'index']);
@@ -319,8 +340,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/usuarios/{usuario}/cambiar-rol', [SoporteController::class, 'cambiarRol']);
         Route::post('/usuarios/{usuario}/reset-password', [SoporteController::class, 'resetPassword']);
         
-        // Logs y monitoreo
-        Route::get('/logs', [SoporteController::class, 'logs']);
+        // Logs del sistema (movido desde admin)
+        Route::get('/logs', [LogController::class, 'index']);
+        Route::delete('/logs', [LogController::class, 'limpiar']);
+        Route::get('/logs/estadisticas', [LogController::class, 'estadisticas']);
+        
+        // Sesiones y monitoreo
         Route::get('/sesiones', [SoporteController::class, 'sesionesActivas']);
         Route::delete('/sesiones/{tokenId}', [SoporteController::class, 'revocarSesion']);
         Route::get('/estadisticas', [SoporteController::class, 'estadisticas']);
@@ -360,13 +385,61 @@ Route::middleware('auth:sanctum')->group(function () {
     |----------------------------------------------------------------------
     */
     Route::middleware('role:profesor')->prefix('profesor')->group(function () {
-        Route::get('/dashboard', [ProfesorController::class, 'dashboard']);
-        Route::get('/materias', [ProfesorController::class, 'misMaterias']);
-        Route::get('/materias/{materiaId}/estudiantes', [ProfesorController::class, 'estudiantesMateria']);
-        Route::get('/horario', [ProfesorController::class, 'miHorario']);
+        Route::get('/dashboard', [\App\Http\Controllers\Api\ProfesorDashboardController::class, 'dashboard']);
         
-        // Gestionar calificaciones de sus materias
-        Route::post('/calificaciones', [ProfesorController::class, 'gestionarCalificacion']);
+        // Usar ProfesorDashboardController para funcionalidades específicas
+        Route::get('/materias', [\App\Http\Controllers\Api\ProfesorDashboardController::class, 'misMaterias']);
+        Route::get('/materias/{materiaId}/estudiantes', [\App\Http\Controllers\Api\ProfesorDashboardController::class, 'estudiantesMateria']);
+        Route::get('/horario', [\App\Http\Controllers\Api\ProfesorDashboardController::class, 'miHorario']);
+        Route::get('/horarios', [\App\Http\Controllers\Api\ProfesorDashboardController::class, 'miHorario']); // Alias plural
+        Route::get('/estudiantes', [\App\Http\Controllers\Api\ProfesorDashboardController::class, 'misEstudiantes']);
+        Route::get('/calificaciones', [\App\Http\Controllers\Api\ProfesorDashboardController::class, 'calificaciones']);
+        Route::post('/calificaciones', [\App\Http\Controllers\Api\ProfesorDashboardController::class, 'guardarCalificacion']);
+        Route::get('/perfil', [\App\Http\Controllers\Api\ProfesorDashboardController::class, 'miPerfil']);
+        
+        // Quizzes - Aula Virtual
+        Route::get('/quizzes', [QuizController::class, 'index']);
+        Route::post('/quizzes', [QuizController::class, 'store']);
+        Route::get('/quizzes/{id}', [QuizController::class, 'show']);
+        Route::put('/quizzes/{id}', [QuizController::class, 'update']);
+        Route::delete('/quizzes/{id}', [QuizController::class, 'destroy']);
+        Route::get('/quizzes/{id}/resultados', [QuizController::class, 'resultados']);
+        Route::get('/quizzes/{id}/estadisticas', [QuizResultController::class, 'estadisticas']);
+        
+        // Preguntas de quizzes
+        Route::get('/quizzes/{id}/preguntas', [QuizController::class, 'indexPreguntas']);
+        Route::post('/quizzes/{id}/preguntas', [QuizController::class, 'storePregunta']);
+        Route::put('/preguntas/{id}', [QuizController::class, 'updatePregunta']);
+        Route::delete('/preguntas/{id}', [QuizController::class, 'destroyPregunta']);
+        
+        // Calificación manual y resultados
+        Route::get('/quiz-attempts/{id}', [QuizResultController::class, 'show']);
+        Route::get('/quiz-attempts/{id}/incidencias', [QuizResultController::class, 'incidencias']);
+        Route::put('/quiz-answers/{id}/calificar', [QuizResultController::class, 'calificarRespuesta']);
+        Route::post('/quiz-attempts/{id}/publicar-nota', [QuizResultController::class, 'publicarNota']);
+        Route::post('/quiz-attempts/{id}/anular', [QuizResultController::class, 'anularIntento']);
+        
+        // Asistencia
+        Route::post('/asistencia/abrir-sesion', [AttendanceController::class, 'abrirSesion']);
+        Route::get('/asistencia/sesion-activa/{horario_id}', [AttendanceController::class, 'sesionActiva']);
+        Route::post('/asistencia/cerrar-sesion/{session_id}', [AttendanceController::class, 'cerrarSesion']);
+        Route::get('/asistencia/historial/{horario_id}', [AttendanceController::class, 'historial']);
+        Route::put('/asistencia/{attendance_id}/justificar', [AttendanceController::class, 'justificar']);
+        
+        // Tareas (Bloque 5.1)
+        Route::get('/tareas', [AssignmentController::class, 'listarProfesor']);
+        Route::post('/tareas', [AssignmentController::class, 'crearProfesor']);
+        Route::put('/tareas/{assignment}', [AssignmentController::class, 'actualizarProfesor']);
+        Route::delete('/tareas/{assignment}', [AssignmentController::class, 'eliminarProfesor']);
+        Route::get('/tareas/{assignment}/entregas', [AssignmentController::class, 'listarEntregasProfesor']);
+        
+        // Auditoría Docente (Bloque 6.1)
+        Route::get('/auditoria/{horario_id}/estudiantes', [AuditoriaController::class, 'listarEstudiantes']);
+        Route::get('/auditoria/{horario_id}/estudiante/{estudiante_id}', [AuditoriaController::class, 'expedienteEstudiante']);
+        Route::get('/auditoria/quiz/{quiz_id}/incidencias', [AuditoriaController::class, 'incidenciasPorExamen']);
+        
+        // Testing (solo desarrollo)
+        Route::get('/asistencia/test/codigos', [AttendanceController::class, 'testCodigos']);
     });
 
     /*
@@ -375,14 +448,34 @@ Route::middleware('auth:sanctum')->group(function () {
     |----------------------------------------------------------------------
     */
     Route::middleware('role:estudiante')->prefix('estudiante')->group(function () {
-        Route::get('/dashboard',      [EstudianteDashboardController::class, 'dashboard']);
-        Route::get('/horarios',       [EstudianteDashboardController::class, 'horarios']);
-        Route::get('/calificaciones', [EstudianteDashboardController::class, 'calificaciones']);
-        Route::get('/solicitud',      [EstudianteDashboardController::class, 'solicitud']);
-        Route::get('/perfil',         [EstudianteDashboardController::class, 'perfil']);
-        Route::get('/inscripciones',  [EstudianteDashboardController::class, 'inscripciones']);
+        Route::get('/dashboard', [EstudianteDashboardController::class, 'dashboard']);
         
-        // Rutas del wizard de admisión
+        // Usar EstudianteDashboardController para funcionalidades específicas
+        Route::get('/horario', [\App\Http\Controllers\Api\EstudianteDashboardController::class, 'miHorario']);
+        Route::get('/calificaciones', [\App\Http\Controllers\Api\EstudianteDashboardController::class, 'misCalificaciones']);
+        Route::get('/perfil', [\App\Http\Controllers\Api\EstudianteDashboardController::class, 'miPerfil']);
+        Route::put('/perfil', [\App\Http\Controllers\Api\EstudianteDashboardController::class, 'actualizarPerfil']);
+        
+        // Estado de solicitud para solicitantes
+        Route::get('/solicitud', [\App\Http\Controllers\Api\EstudianteDashboardController::class, 'obtenerEstadoSolicitud']);
+        
+        // Quizzes - Aula Virtual (Estudiante)
+        Route::get('/quizzes', [QuizAttemptController::class, 'index']);
+        Route::get('/quizzes/{id}', [QuizAttemptController::class, 'show']);
+        Route::post('/quizzes/{id}/iniciar', [QuizAttemptController::class, 'iniciar']);
+        Route::post('/quizzes/{id}/responder', [QuizAttemptController::class, 'responder']);
+        Route::post('/quizzes/{id}/enviar', [QuizAttemptController::class, 'enviar']);
+        Route::post('/quizzes/{id}/incidencias', [QuizAttemptController::class, 'registrarIncidencia']);
+        Route::patch('/quiz-attempts/{id}', [QuizAttemptController::class, 'sincronizarTimer']);
+        Route::get('/quiz-attempts/{id}/resultado', [QuizAttemptController::class, 'resultado']);
+        
+        // Inscripciones
+        Route::get('/inscripciones', [\App\Http\Controllers\Api\EstudianteDashboardController::class, 'misInscripciones']);
+        Route::get('/horarios-disponibles', [\App\Http\Controllers\Api\EstudianteDashboardController::class, 'horariosDisponibles']);
+        Route::post('/inscribir', [\App\Http\Controllers\Api\EstudianteDashboardController::class, 'inscribir']);
+        Route::delete('/inscripciones/{inscripcionId}', [\App\Http\Controllers\Api\EstudianteDashboardController::class, 'retirarInscripcion']);
+        
+        // Rutas del wizard de admisión (para solicitantes)
         Route::prefix('admision')->group(function () {
             Route::get('/solicitud', [AdmisionController::class, 'obtenerSolicitud']);
             Route::post('/paso-1', [AdmisionController::class, 'guardarPaso1']);
@@ -391,6 +484,19 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/paso-4', [AdmisionController::class, 'guardarPaso4']);
             Route::post('/enviar', [AdmisionController::class, 'enviarSolicitud']);
         });
+        
+        // Asistencia
+        Route::post('/asistencia/marcar', [AttendanceController::class, 'marcar']);
+        Route::get('/asistencia/resumen', [AttendanceController::class, 'resumenEstudiante']);
+        
+        // Quizzes/Exámenes
+        Route::get('/quizzes', [QuizController::class, 'listarEstudiante']);
+        
+        // Tareas (Bloque 5.1)
+        Route::get('/tareas', [AssignmentController::class, 'listarEstudiante']);
+        Route::get('/tareas/{assignment}', [AssignmentController::class, 'verEstudiante']);
+        Route::post('/tareas/{assignment}/entregar', [AssignmentController::class, 'entregarEstudiante']);
+        Route::get('/tareas/{assignment}/mi-entrega', [AssignmentController::class, 'verMiEntrega']);
     });
 });
 

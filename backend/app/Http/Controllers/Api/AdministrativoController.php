@@ -16,12 +16,12 @@ class AdministrativoController extends Controller
      */
     public function dashboard(): JsonResponse
     {
-        // El middleware ya verificó el rol, no necesitamos Gate aquí
+        // El middleware ya verificÃ³ el rol, no necesitamos Gate aquÃ­
         // Gate::authorize('ver-reportes-academicos');
 
         $stats = [
             'solicitudes_pendientes' => DB::table('solicitudes_admision')
-                ->where('estatus', 'pendiente')
+                ->where('estado', 'pendiente')
                 ->count(),
             
             'inscripciones_periodo_actual' => DB::table('inscripciones')
@@ -57,11 +57,11 @@ class AdministrativoController extends Controller
     }
 
     /**
-     * Listar solicitudes de admisión
+     * Listar solicitudes de admisiÃ³n
      */
     public function solicitudes(Request $request): JsonResponse
     {
-        // El middleware ya verificó el rol
+        // El middleware ya verificÃ³ el rol
         // Gate::authorize('aprobar-solicitud-admision');
 
         $perPage = $request->query('per_page', 20);
@@ -71,17 +71,17 @@ class AdministrativoController extends Controller
             ->leftJoin('estudiantes', 'solicitudes_admision.estudiante_id', '=', 'estudiantes.id')
             ->leftJoin('users', 'estudiantes.user_id', '=', 'users.id')
             ->leftJoin('users as revisor', 'solicitudes_admision.revisado_por', '=', 'revisor.id')
-            ->leftJoin('carreras', 'solicitudes_admision.carrera_id', '=', 'carreras.id')
+            
             ->select(
                 'solicitudes_admision.*',
                 DB::raw("CONCAT(estudiantes.nombre, ' ', estudiantes.apellido) as estudiante_nombre"),
                 'estudiantes.cedula as estudiante_cedula',
                 'users.email as estudiante_email',
-                'carreras.nombre as carrera_nombre',
+                
                 'revisor.name as revisado_por_nombre'
             )
-            ->whereNotNull('solicitudes_admision.fecha_envio') // Solo las enviadas
-            ->orderBy('solicitudes_admision.fecha_envio', 'desc');
+             // Solo las enviadas
+            ->orderBy('solicitudes_admision.created_at', 'desc');
 
         if ($estado) {
             $query->where('solicitudes_admision.estado', $estado);
@@ -149,10 +149,10 @@ class AdministrativoController extends Controller
             'turno_preferido' => $solicitud->turno_preferido,
             'motivacion' => $solicitud->motivacion,
             
-            // Paso 3: Académico
+            // Paso 3: AcadÃ©mico
             'nivel_educativo' => $solicitud->nivel_educativo,
             'institucion_egreso' => $solicitud->institucion_egreso,
-            'año_graduacion' => $solicitud->año_graduacion,
+            'aÃ±o_graduacion' => $solicitud->aÃ±o_graduacion,
             'promedio_notas' => $solicitud->promedio_notas,
             'tipo_bachillerato' => $solicitud->tipo_bachillerato,
             'mencion' => $solicitud->mencion,
@@ -170,7 +170,7 @@ class AdministrativoController extends Controller
             'doc_certificado_medico' => $solicitud->doc_certificado_medico,
             'doc_carta_conducta' => $solicitud->doc_carta_conducta,
             
-            // Revisión
+            // RevisiÃ³n
             'comentarios_admin' => $solicitud->comentarios_admin,
             'razon_rechazo' => $solicitud->razon_rechazo,
             'revisado_por_nombre' => $solicitud->revisado_por_nombre,
@@ -196,7 +196,7 @@ class AdministrativoController extends Controller
     }
 
     /**
-     * Aprobar solicitud de admisión
+     * Aprobar solicitud de admisiÃ³n
      */
     public function aprobarSolicitud(Request $request, int $id): JsonResponse
     {
@@ -245,11 +245,11 @@ class AdministrativoController extends Controller
                     ->where('id', $solicitud->estudiante_id)
                     ->update($updates);
                     
-                // Generar matrícula definitiva (reemplazar TEMP-)
+                // Generar matrÃ­cula definitiva (reemplazar TEMP-)
                 $estudiante = DB::table('estudiantes')->where('id', $solicitud->estudiante_id)->first();
                 if ($estudiante && str_starts_with($estudiante->matricula, 'TEMP-')) {
-                    $año = date('Y');
-                    $nuevaMatricula = $año . '-' . str_pad($solicitud->estudiante_id, 6, '0', STR_PAD_LEFT);
+                    $aÃ±o = date('Y');
+                    $nuevaMatricula = $aÃ±o . '-' . str_pad($solicitud->estudiante_id, 6, '0', STR_PAD_LEFT);
                     DB::table('estudiantes')
                         ->where('id', $solicitud->estudiante_id)
                         ->update(['matricula' => $nuevaMatricula]);
@@ -270,7 +270,7 @@ class AdministrativoController extends Controller
     }
 
     /**
-     * Rechazar solicitud de admisión
+     * Rechazar solicitud de admisiÃ³n
      */
     public function rechazarSolicitud(Request $request, int $id): JsonResponse
     {
@@ -308,7 +308,7 @@ class AdministrativoController extends Controller
     }
 
     /**
-     * Solicitar corrección a la solicitud
+     * Solicitar correcciÃ³n a la solicitud
      */
     public function solicitarCorreccion(Request $request, int $id): JsonResponse
     {
@@ -339,7 +339,7 @@ class AdministrativoController extends Controller
             ]);
 
         return response()->json([
-            'message' => 'Se ha solicitado corrección. El estudiante podrá modificar su solicitud.',
+            'message' => 'Se ha solicitado correcciÃ³n. El estudiante podrÃ¡ modificar su solicitud.',
         ]);
     }
 
@@ -348,7 +348,7 @@ class AdministrativoController extends Controller
      */
     public function pagos(Request $request): JsonResponse
     {
-        // El middleware ya verificó el rol
+        // El middleware ya verificÃ³ el rol
         // Gate::authorize('gestionar-pagos');
 
         $perPage = $request->query('per_page', 20);
@@ -454,11 +454,11 @@ class AdministrativoController extends Controller
     }
 
     /**
-     * Reportes académicos
+     * Reportes acadÃ©micos
      */
     public function reportes(Request $request): JsonResponse
     {
-        // El middleware ya verificó el rol
+        // El middleware ya verificÃ³ el rol
         // Gate::authorize('ver-reportes-academicos');
 
         $tipo = $request->query('tipo', 'general');
@@ -536,3 +536,4 @@ class AdministrativoController extends Controller
         ];
     }
 }
+

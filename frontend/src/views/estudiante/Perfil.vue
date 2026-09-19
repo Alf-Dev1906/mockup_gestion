@@ -77,8 +77,13 @@ import api from '@/services/api'
 const loading = ref(true)
 const perfil = ref({})
 
-const e = computed(() => perfil.value?.estudiante ?? {})
-const u = computed(() => perfil.value?.user ?? {})
+// El backend envía data directamente, no anidado en {user, estudiante}
+const e = computed(() => perfil.value)
+const u = computed(() => ({ 
+  name: perfil.value?.nombre_completo || perfil.value?.nombre,
+  email: perfil.value?.email,
+  role: 'estudiante'
+}))
 
 const estatusClass = computed(() => ({
   activo: 'text-green-600', solicitante: 'text-yellow-600',
@@ -95,11 +100,12 @@ const estudianteFields = computed(() => [
   { label: 'Matrícula',        value: e.value.matricula },
   { label: 'Cédula',           value: e.value.cedula },
   { label: 'Carrera',          value: e.value.carrera?.nombre },
-  { label: 'Facultad',         value: e.value.carrera?.facultad?.nombre },
+  { label: 'Facultad',         value: e.value.facultad?.nombre },
   { label: 'Semestre',         value: e.value.semestre_actual },
+  { label: 'Créditos Aprobados', value: e.value.creditos_aprobados },
   { label: 'Índice Acad.',     value: e.value.indice_academico },
   { label: 'Estatus',          value: e.value.estatus, class: estatusClass.value + ' font-semibold capitalize' },
-  { label: 'Fecha ingreso',    value: e.value.fecha_ingreso },
+  { label: 'Fecha ingreso',    value: e.value.fecha_ingreso?.substring(0, 10) },
 ])
 
 const contactoFields = computed(() => [
@@ -107,18 +113,21 @@ const contactoFields = computed(() => [
   { label: 'Dirección',   value: e.value.direccion },
   { label: 'Ciudad',      value: e.value.ciudad },
   { label: 'Estado',      value: e.value.estado },
-  { label: 'Nac.',        value: e.value.fecha_nacimiento },
-  { label: 'Género',      value: e.value.genero },
+  { label: 'Nac.',        value: e.value.fecha_nacimiento?.substring(0, 10) },
+  { label: 'Género',      value: e.value.genero === 'M' ? 'Masculino' : e.value.genero === 'F' ? 'Femenino' : e.value.genero },
 ])
 
 const emergenciaFields = computed(() => [
-  { label: 'Nombre',    value: e.value.contacto_emergencia_nombre },
-  { label: 'Teléfono',  value: e.value.contacto_emergencia_telefono },
-  { label: 'Relación',  value: e.value.contacto_emergencia_relacion },
+  { label: 'Nombre',    value: e.value.contacto_emergencia?.nombre || 'No registrado' },
+  { label: 'Teléfono',  value: e.value.contacto_emergencia?.telefono || 'No registrado' },
+  { label: 'Relación',  value: e.value.contacto_emergencia?.relacion || 'No registrado' },
 ])
 
 onMounted(async () => {
-  try { const { data } = await api.get('/estudiante/perfil'); perfil.value = data }
+  try { 
+    const { data } = await api.get('/estudiante/perfil')
+    perfil.value = data.data || data // Soporte para wrapper
+  }
   finally { loading.value = false }
 })
 </script>

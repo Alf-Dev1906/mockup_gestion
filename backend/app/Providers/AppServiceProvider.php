@@ -57,7 +57,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Gate para gestionar backups
         Gate::define('gestionar-backups', function (User $user) {
-            return $user->hasRole('soporte_it');
+            return $user->hasRole('soporte_it') || $user->isDesarrollador();
         });
 
         // Gate para acceder a configuraciones críticas
@@ -67,12 +67,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Gate para ver logs del sistema
         Gate::define('ver-logs-sistema', function (User $user) {
-            return $user->hasRole('soporte_it');
+            return $user->hasRole('soporte_it') || $user->isDesarrollador();
         });
 
         // Gate para gestionar usuarios
         Gate::define('gestionar-usuarios', function (User $user) {
-            return $user->hasRole('soporte_it');
+            return $user->hasRole('soporte_it') || $user->isDesarrollador();
         });
 
         // Gate para ejecutar comandos del sistema

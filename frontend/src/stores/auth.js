@@ -32,7 +32,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Para estudiante: sub-estado
   const estudianteEstatus = computed(() => estudianteData.value?.estatus || null)
-  const isSolicitante = computed(() => isEstudiante.value && estudianteEstatus.value === 'solicitante')
+  const isSolicitante = computed(() => isEstudiante.value && estudianteEstatus.value === 'inactivo')
   const isEstudianteActivo = computed(() => isEstudiante.value && estudianteEstatus.value === 'activo')
 
   // Ruta de dashboard según rol

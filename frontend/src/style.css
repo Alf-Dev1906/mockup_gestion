@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -7,15 +7,65 @@ body {
   min-height: 100vh;
 }
 
-/* Scrollbar invisible para el sidebar - se oculta completamente */
+/* ═══════════════════════════════════════════════════════════════════════
+   SCROLLBAR PERSONALIZADO - Funcional y estético
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* scrollbar-none: Oculto completamente */
+.scrollbar-none {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* scrollbar-thin: Delgado y sutil que se adapta al fondo oscuro */
 .scrollbar-thin {
-  scrollbar-width: none;
-  /* Firefox */
-  -ms-overflow-style: none;
-  /* IE and Edge */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent; /* thumb track */
 }
 
 .scrollbar-thin::-webkit-scrollbar {
-  display: none;
-  /* Chrome, Safari, Opera */
+  width: 6px; /* Chrome, Safari, Opera */
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* scrollbar-styled: Para contenido principal (fondo claro) */
+.scrollbar-styled {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.3) transparent; /* indigo */
+}
+
+.scrollbar-styled::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-styled::-webkit-scrollbar-track {
+  background: rgba(243, 244, 246, 0.5); /* gray-100 */
+  border-radius: 4px;
+}
+
+.scrollbar-styled::-webkit-scrollbar-thumb {
+  background-color: rgba(99, 102, 241, 0.3);
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.scrollbar-styled::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(99, 102, 241, 0.5);
 }

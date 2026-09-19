@@ -203,7 +203,7 @@ class SolicitudAdmision extends Model
     /**
      * Verifica si todos los pasos están completados
      */
-    public function todosLo sPasosCompletados(): bool
+    public function todosLosPasosCompletados(): bool
     {
         return $this->paso1_completado 
             && $this->paso2_completado 

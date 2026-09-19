@@ -167,14 +167,17 @@
             {{ initials }}
           </div>
           <div class="flex-1 min-w-0">
-            <h2 class="text-xl font-bold">{{ data.estudiante?.nombre }} {{ data.estudiante?.apellido }}</h2>
+            <h2 class="text-xl font-bold">{{ data.estudiante?.nombre_completo }}</h2>
             <p class="text-indigo-200 text-sm mt-0.5">{{ data.estudiante?.matricula }}</p>
             <div class="flex flex-wrap gap-3 mt-3">
               <span class="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                {{ data.estudiante?.carrera?.nombre ?? 'Sin carrera' }}
+                📚 {{ data.estudiante?.carrera ?? 'Sin carrera' }}
               </span>
               <span class="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                Semestre {{ data.semestre_actual }}
+                🏛️ {{ data.estudiante?.facultad ?? 'Sin facultad' }}
+              </span>
+              <span class="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                📖 Semestre {{ data.estudiante?.semestre_actual }}
               </span>
               <span class="bg-green-400/30 text-green-100 text-xs font-semibold px-3 py-1 rounded-full">
                 ✅ {{ data.estudiante?.estatus }}
@@ -186,22 +189,22 @@
 
       <!-- Stats académicos -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center">
-          <p class="text-3xl font-bold text-indigo-600">{{ data.materias_inscritas }}</p>
+        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center hover:shadow-lg transition-shadow">
+          <p class="text-3xl font-bold text-indigo-600">{{ data.estadisticas?.materias_inscritas ?? 0 }}</p>
           <p class="text-xs text-gray-500 mt-1">Materias inscritas</p>
         </div>
-        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center">
-          <p class="text-3xl font-bold text-emerald-600">{{ data.creditos_aprobados }}</p>
+        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center hover:shadow-lg transition-shadow">
+          <p class="text-3xl font-bold text-emerald-600">{{ data.estadisticas?.creditos_aprobados ?? 0 }}</p>
           <p class="text-xs text-gray-500 mt-1">Créditos aprobados</p>
         </div>
-        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center">
-          <p class="text-3xl font-bold" :class="data.indice_academico >= 10 ? 'text-green-600' : 'text-red-600'">
-            {{ data.indice_academico?.toFixed(2) }}
+        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center hover:shadow-lg transition-shadow">
+          <p class="text-3xl font-bold" :class="parseFloat(data.estadisticas?.indice_academico) >= 10 ? 'text-green-600' : 'text-red-600'">
+            {{ data.estadisticas?.indice_academico ?? '0.00' }}
           </p>
           <p class="text-xs text-gray-500 mt-1">Índice académico</p>
         </div>
-        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center">
-          <p class="text-3xl font-bold text-blue-600">{{ data.semestre_actual }}</p>
+        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center hover:shadow-lg transition-shadow">
+          <p class="text-3xl font-bold text-blue-600">{{ data.estudiante?.semestre_actual ?? 1 }}</p>
           <p class="text-xs text-gray-500 mt-1">Semestre actual</p>
         </div>
       </div>
@@ -250,7 +253,12 @@ function formatearFecha(fecha) {
 }
 
 onMounted(async () => {
-  try { const { data: res } = await api.get('/estudiante/dashboard'); data.value = res }
-  finally { loading.value = false }
+  try { 
+    const { data: res } = await api.get('/estudiante/dashboard')
+    // res.data contiene { estudiante: {...}, estadisticas: {...} }
+    data.value = res.data || res
+  } finally { 
+    loading.value = false 
+  }
 })
 </script>

@@ -1,0 +1,332 @@
+==================================================================
+   PASO 2.1 - MOTOR DE EXAMENES DINAMICOS (JSON ENGINE)
+   Fecha: Septiembre 7, 2026
+   Estado: ✅ COMPLETADO 100%
+==================================================================
+
+DESCRIPCION
+-----------
+El corazón del Aula Virtual. Un sistema que permite al profesor crear
+exámenes con 5 tipos de preguntas distintas. Las respuestas correctas
+y la lógica de calificación viven en la columna JSON de quiz_questions.
+Esto hace el sistema extensible sin nuevas migraciones.
+
+==================================================================
+CONTENIDO ENTREGABLE
+==================================================================
+
+✅ DOCUMENTO: MOTOR_JSON_EXAMENES.md
+   - Arquitectura completa del motor JSON
+   - 5 tipos de preguntas completamente especificados
+   - Estructuras quiz_questions.contenido por tipo
+   - Estructuras quiz_answers.respuesta por tipo
+   - Lógica de calificación automática para cada tipo
+   - Validaciones backend por tipo
+   - Flujo completo (profesor → estudiante → calificación)
+   - Ejemplos completos en JSON
+   - Modelo de extensibilidad
+
+✅ SERVICIO: QuizGradingService.php
+   - Ubicación: backend/app/Services/QuizGradingService.php
+   - Métodos de calificación para cada tipo de pregunta
+   - Validaciones robustas de entrada
+   - Cálculo de puntuaciones por pregunta
+   - Calificación de intentos completos
+   - Resumen estadístico de calificaciones
+   - Desviación estándar y análisis
+
+==================================================================
+TIPOS DE PREGUNTAS IMPLEMENTADOS
+==================================================================
+
+TIPO 1: SELECCION MULTIPLE
+✅ Estructura: Opciones con ID, texto, flag es_correcta
+✅ Permitir una o varias respuestas correctas (flag permite_multiple)
+✅ Calificación: (correctas_marcadas / total_correctas) * puntos
+✅ Ejemplo: "¿Cuáles son lenguajes de programación? Python, Java..."
+
+TIPO 2: VERDADERO/FALSO CON JUSTIFICACION
+✅ Estructura: Afirmación, respuesta_correcta (bool), puntos_respuesta
+✅ Justificación: Campo obligatorio/opcional (flag)
+✅ Calificación automática: Solo V/F correcto
+✅ Calificación manual: Profesor revisa justificación (si requerida)
+✅ Ejemplo: "El agua hierve a 100°C al nivel del mar - ¿Por qué?"
+
+TIPO 3: RELACION DE COLUMNAS (EMPAREJAMIENTO)
+✅ Estructura: Columna A (términos) + Columna B (definiciones)
+✅ Pares correctos predefinidos
+✅ Opción de mezclar columna B en frontend
+✅ Calificación: (pares_correctos_count / total_pares) * puntos
+✅ Ejemplo: "Emparejar capitales con países"
+
+TIPO 4: LLENADO DE ESPACIOS
+✅ Estructura: Plantilla con "__" (espacios), respuestas válidas por espacio
+✅ Sensibilidad a mayúsculas configurable por espacio
+✅ Validación de múltiples respuestas válidas por espacio
+✅ Calificación: (espacios_correctos / total_espacios) * puntos
+✅ Ejemplo: "El __ de Venezuela es __, moneda es __"
+
+TIPO 5: MULTIMEDIA CON ENTREGA DE ARCHIVO
+✅ Estructura: Descripción, archivo adjunto (imagen/video), extensiones permitidas
+✅ Validación de tamaño máximo (default 5 MB)
+✅ Calificación: Obligatoriamente manual (profesor revisa)
+✅ Almacenamiento: quiz_answers.archivo_url
+✅ Ejemplo: "Analiza el diagrama y entrega PDF con análisis"
+
+==================================================================
+CONTRATO JSON - RESUMEN
+==================================================================
+
+quiz_questions.contenido (estructura flexible por tipo):
+
+Tipo 1 - Selección:
+{
+  "opciones": [{"id": "a", "texto": "...", "es_correcta": bool}],
+  "permite_multiple": bool
+}
+
+Tipo 2 - Verdadero/Falso:
+{
+  "afirmacion": "...",
+  "respuesta_correcta": bool,
+  "justificacion_requerida": bool,
+  "puntos_respuesta": decimal,
+  "puntos_justificacion": decimal
+}
+
+Tipo 3 - Relación:
+{
+  "columna_a": [{"id": "1", "texto": "..."}],
+  "columna_b": [{"id": "x", "texto": "..."}],
+  "pares_correctos": [{"a": "1", "b": "x"}],
+  "mezclar_columna_b": bool
+}
+
+Tipo 4 - Espacios:
+{
+  "plantilla": "El __ de ... es __",
+  "espacios": [
+    {"id": 1, "respuestas_validas": [...], "sensible_mayusculas": bool}
+  ]
+}
+
+Tipo 5 - Multimedia:
+{
+  "descripcion": "...",
+  "archivo_adjunto_url": "/storage/...",
+  "extensiones_respuesta_permitidas": ["pdf", "zip"],
+  "tamano_max_mb": 5,
+  "calificacion_manual": true,
+  "rubrica": "..."
+}
+
+quiz_answers.respuesta (estructura por tipo de pregunta):
+
+{
+  "seleccionadas": ["a", "d"]  // Selección
+  "valor": true,               // Verdadero/Falso
+  "justificacion": "..."       // Verdadero/Falso (opcional)
+  "pares": [{"a": "1", "b": "x"}]  // Relación
+  "respuestas": {"1": "capital"}   // Espacios
+  "archivo_url": "/storage/..."    // Multimedia
+}
+
+==================================================================
+CALIFICACION AUTOMATICA - ALGORITMO
+==================================================================
+
+QuizGradingService.calificarRespuesta(pregunta, respuestaEstudiante):
+
+1. Match tipo de pregunta
+2. Validar estructura de respuesta (formato JSON)
+3. Extraer valores correctos de quiz_questions.contenido
+4. Comparar respuesta del estudiante con valores correctos
+5. Retornar: {es_correcta, puntos_obtenidos, requiere_revision}
+
+Tipos 1-4: es_correcta = boolean, puntos = calculados
+Tipo 5: es_correcta = null, puntos = null, requiere_revision = true
+
+==================================================================
+FLUJO COMPLETO DE EXAMEN
+==================================================================
+
+1. PROFESOR CREA EXAMEN
+   POST /api/profesor/quizzes
+   └─ Crear quiz (estado=borrador)
+
+2. PROFESOR CREA PREGUNTAS
+   POST /api/profesor/quizzes/:id/preguntas
+   └─ Body: {tipo, enunciado, contenido (JSON), puntos, obligatoria}
+   └─ Backend: Valida estructura JSON según tipo
+   └─ Almacena en quiz_questions.contenido
+
+3. PROFESOR PUBLICA EXAMEN
+   PUT /api/profesor/quizzes/:id
+   └─ estado: 'publicado'
+
+4. ESTUDIANTE VE EXAMEN DISPONIBLE
+   GET /api/estudiante/quizzes
+   └─ Retorna quizzes publicados con fecha_inicio <= now
+
+5. ESTUDIANTE INICIA INTENTO
+   POST /api/estudiante/quiz-attempts
+   └─ Crear quiz_attempts (estado=en_progreso, inicio_at=now)
+   └─ Generar quiz_answers vacíos para cada pregunta
+
+6. ESTUDIANTE RESPONDE (Autosave cada 30s)
+   PUT /api/estudiante/quiz-attempts/:id/respuestas/:preguntaId
+   └─ Body: {respuesta: JSON}
+   └─ Guardar en quiz_answers.respuesta (sin calificar aún)
+
+7. ESTUDIANTE ENVÍA EXAMEN
+   POST /api/estudiante/quiz-attempts/:id/submit
+   └─ quiz_attempts.estado = 'enviado'
+   └─ quiz_attempts.fin_at = now
+   └─ Llamar QuizGradingService.calificarIntento()
+   └─ Iterar cada pregunta y calificar
+   └─ Actualizar quiz_answers (es_correcta, puntos_obtenidos)
+   └─ Sumar puntos totales en quiz_attempts.nota_obtenida
+   └─ Si requiere revisión manual: estado = 'enviado'
+   └─ Si todo automático: estado = 'calificado'
+
+8. PROFESOR REVISA (Si hay preguntas multimedia/justificaciones)
+   GET /api/profesor/quiz-attempts/:id
+   └─ Ver intento con todas las respuestas
+
+9. PROFESOR CALIFICA MANUALMENTE
+   PUT /api/profesor/quiz-answers/:preguntaId/calificar
+   └─ Body: {es_correcta, puntos_obtenidos, comentario}
+   └─ Actualizar quiz_answers
+
+10. PROFESOR PUBLICA NOTA
+    POST /api/profesor/quiz-attempts/:id/publicar-nota
+    └─ quiz_attempts.estado = 'calificado'
+    └─ Crear Notification para estudiante
+
+11. ESTUDIANTE VE RESULTADO
+    GET /api/estudiante/quiz-attempts/:id
+    └─ Ver nota, respuestas corregidas (si mostrar_resultado_inmediato=true)
+
+==================================================================
+VALIDACIONES BACKEND
+==================================================================
+
+Al crear pregunta (QuizQuestionRequest):
+
+Base:
+  - tipo: required|in:seleccion,verdadero_falso,relacion_columnas,espacios,multimedia
+  - enunciado: required|string|max:500
+  - contenido: required|json
+  - puntos: required|numeric|min:0|max:100
+  - obligatoria: boolean|default:true
+
+Por tipo:
+
+SELECCION:
+  - contenido.opciones: array|min:2
+  - contenido.opciones.*.id: required|string
+  - contenido.opciones.*.texto: required|string
+  - contenido.opciones.*.es_correcta: required|boolean
+  - contenido.permite_multiple: boolean|required
+
+VERDADERO_FALSO:
+  - contenido.afirmacion: required|string
+  - contenido.respuesta_correcta: required|boolean
+  - contenido.justificacion_requerida: boolean|default:false
+  - contenido.puntos_respuesta: numeric|min:0 (si no justificación)
+  - contenido.puntos_justificacion: numeric|min:0 (si justificación)
+
+RELACION_COLUMNAS:
+  - contenido.columna_a: array|min:2
+  - contenido.columna_b: array|min:2|size:columna_a
+  - contenido.pares_correctos: array|size:columna_a
+  - contenido.mezclar_columna_b: boolean|default:true
+
+ESPACIOS:
+  - contenido.plantilla: required|string|contains:'__'
+  - contenido.espacios: array|size:plantilla_underscores_count
+  - contenido.espacios.*.id: required|integer
+  - contenido.espacios.*.respuestas_validas: array|min:1
+  - contenido.espacios.*.sensible_mayusculas: boolean|default:false
+
+MULTIMEDIA:
+  - contenido.descripcion: required|string
+  - contenido.archivo_adjunto_url: nullable|url
+  - contenido.extensiones_respuesta_permitidas: array|min:1
+  - contenido.tamano_max_mb: numeric|min:1|max:50
+  - contenido.calificacion_manual: boolean|default:true
+  - contenido.rubrica: nullable|string
+
+==================================================================
+EXTENSIBILIDAD FUTURA
+==================================================================
+
+Para agregar nuevo tipo de pregunta (ej: "ensayo", "emparejamiento_images"):
+
+1. Crear migración ALTER TABLE quiz_questions ADD tipo enum (...)
+2. Definir contrato JSON en MOTOR_JSON_EXAMENES.md
+3. Crear método calificarXXX() en QuizGradingService
+4. Crear componente Vue PreguntaXXX.vue
+5. Registrar en QuizRenderer.vue
+6. Actualizar validaciones en QuizQuestionRequest
+
+✅ Sin romper datos existentes
+✅ Compatibilidad retroactiva
+
+==================================================================
+ARCHIVOS CREADOS/MODIFICADOS
+==================================================================
+
+✅ MOTOR_JSON_EXAMENES.md (Documento de especificación)
+   - Ubicación: c:\Users\danie\Documents\Gestion_uni\
+   - Contenido: 400+ líneas, 5 tipos de preguntas, flujo completo
+   - Uso: Referencia técnica para desarrollo y mantenimiento
+
+✅ QuizGradingService.php (Servicio de calificación)
+   - Ubicación: backend/app/Services/
+   - Clases: QuizGradingService
+   - Métodos: 10+ públicos y privados
+   - Líneas: 250+
+
+==================================================================
+PROXIMO PASO: PASO 2.2
+==================================================================
+
+Crear Controllers y Requests en Laravel:
+
+Controllers:
+  - QuizController (CRUD quizzes)
+  - QuizQuestionController (CRUD preguntas)
+  - QuizAttemptController (intentos del estudiante)
+  - QuizGradingController (calificación profesor)
+
+Requests (Validaciones):
+  - StoreQuizRequest
+  - StoreQuizQuestionRequest
+  - SubmitQuizAttemptRequest
+
+Routes:
+  - POST /api/profesor/quizzes
+  - POST /api/profesor/quizzes/:id/preguntas
+  - GET /api/estudiante/quiz-attempts/:id
+  - POST /api/estudiante/quiz-attempts/:id/submit
+  - PUT /api/profesor/quiz-answers/:id/calificar
+
+==================================================================
+VERIFICACION FINAL
+==================================================================
+
+✅ Contrato JSON bien definido para 5 tipos
+✅ Estructuras quiz_questions.contenido agnósticas
+✅ Estructuras quiz_answers.respuesta agnósticas
+✅ Calificación automática codificada (tipos 1-4)
+✅ Calificación manual flagged (tipo 5)
+✅ Validaciones robustas por tipo
+✅ Service preparado para usar en controllers
+✅ Extensible sin nuevas migraciones (opcional enum)
+✅ Documentación completa
+✅ Ejemplos JSON completos
+
+==================================================================
+   FIN DE PASO 2.1
+==================================================================

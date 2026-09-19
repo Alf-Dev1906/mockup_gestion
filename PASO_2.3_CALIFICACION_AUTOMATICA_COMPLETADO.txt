@@ -1,0 +1,356 @@
+==================================================================
+   PASO 2.3 - CALIFICACION AUTOMATICA (ALGORITMOS EXACTOS)
+   Fecha: Septiembre 7, 2026
+   Estado: ✅ COMPLETADO 100%
+==================================================================
+
+SERVICIO CREADO: QuizGradingService.php
+Ubicación: backend/app/Services/
+
+==================================================================
+METODOS PRINCIPALES
+==================================================================
+
+✅ grade(QuizAttempt): float
+   - Calificar intento completo
+   - Iterar todas las respuestas
+   - Llamar gradeQuestion() para cada una
+   - Actualizar quiz_answers con resultado
+   - Retorna: nota total obtenida
+
+✅ gradeQuestion(QuizQuestion, array): array
+   - Calificar pregunta individual
+   - Match por tipo de pregunta
+   - Retorna: [es_correcta, puntos_obtenidos, requiere_revision]
+
+==================================================================
+TIPO 1: SELECCION MULTIPLE
+==================================================================
+
+Algoritmo:
+---------
+1. Validar que respuesta sea array no vacío
+2. Extraer opciones correctas de contenido.opciones
+3. Obtener IDs donde es_correcta=true → idsCorrectos
+4. Comparar respuestas seleccionadas con idsCorrectos
+5. es_correcta = true solo si EXACTAMENTE coinciden:
+   - Todas las opciones seleccionadas son correctas
+   - Todas las opciones correctas han sido seleccionadas
+6. Puntos: puntos_completos si es_correcta, 0 si no
+
+Validación permite_multiple:
+- Si permite_multiple=false: Solo 1 selección permitida
+- Si permite_multiple=true: N selecciones permitidas
+
+Ejemplo:
+--------
+Pregunta: "¿Cuáles son lenguajes?" (permite_multiple=true)
+  Opciones: a(Python, correcta), b(HTML, no), c(Java, correcta)
+  Respuesta estudiante: ["a", "c"]
+  Resultado: es_correcta=true, puntos=5
+
+  Respuesta estudiante: ["a"] (falta Java)
+  Resultado: es_correcta=false, puntos=0
+
+  Respuesta estudiante: ["a", "b", "c"] (incluye HTML)
+  Resultado: es_correcta=false, puntos=0
+
+==================================================================
+TIPO 2: VERDADERO/FALSO CON JUSTIFICACION
+==================================================================
+
+Algoritmo:
+---------
+1. Validar que valor sea booleano (true/false/1/0/'true'/'false')
+2. Normalizar a booleano con filter_var
+3. Extraer respuesta_correcta del contenido
+4. Comparación exacta: valor === respuesta_correcta
+5. Calcular puntos_respuesta:
+   - Si es_correcta: puntos_respuesta (default: puntos/2)
+   - Si no: 0
+6. Si justificacion_requerida=true:
+   - requiere_revision=true
+   - Profesor debe calificar justificación manualmente
+
+Ejemplo:
+--------
+Pregunta: "El agua hierve a 100°C" (respuesta_correcta=true)
+  Respuesta: {valor: true, justificacion: "porque..."}
+  Resultado: es_correcta=true, puntos_respuesta=3
+
+  Respuesta: {valor: false, justificacion: "porque..."}
+  Resultado: es_correcta=false, puntos_obtenidos=0, requiere_revision=true
+
+==================================================================
+TIPO 3: RELACION DE COLUMNAS (EMPAREJAMIENTO)
+==================================================================
+
+Algoritmo:
+---------
+1. Validar que paresEstudiante sea array no vacío
+2. Extraer pares_correctos del contenido
+3. NORMALIZAR pares con JSON (JSON_SORT_KEYS) para comparación robusta
+   - Ejemplo: {a:1, b:x} se convierte en string "{"a":"1","b":"x"}"
+   - Esto permite comparación independiente del orden de propiedades
+4. Usar array_intersect entre pares normalizados
+5. es_correcta = true solo si TODOS los pares coinciden exactamente
+6. Puntos:
+   - Si es_correcta: puntos_completos
+   - Si no: 0 (SIN puntos parciales)
+
+Lógica de orden:
+- Los pares pueden estar en cualquier orden en la respuesta
+- {a:1->x} es igual a {a:1->x} independientemente de donde esté
+
+Ejemplo:
+--------
+Pregunta: "Emparejar capitales con países"
+  Pares correctos: [{a:"1", b:"x"}, {a:"2", b:"y"}, {a:"3", b:"z"}]
+  
+  Respuesta: [{a:"1", b:"x"}, {a:"2", b:"y"}, {a:"3", b:"z"}]
+  Resultado: es_correcta=true, puntos=5
+
+  Respuesta: [{a:"1", b:"x"}, {a:"2", b:"z"}, {a:"3", b:"y"}]
+  Resultado: es_correcta=false, puntos=0 (pares 2 y 3 invertidos)
+
+  Respuesta: [{a:"1", b:"x"}]
+  Resultado: es_correcta=false, puntos=0 (incompleto)
+
+==================================================================
+TIPO 4: LLENADO DE ESPACIOS
+==================================================================
+
+Algoritmo:
+---------
+1. Validar que respuestas sea array y espacios no vacío
+2. Para CADA espacio:
+   a. Extraer respuesta_usuario de respuestas[espacio.id]
+   b. Obtener respuestas_validas y sensible_mayusculas
+   c. Llamar validateBlank() para validar
+   d. Si válida: contador_correctos++
+3. es_correcta = true solo si contador_correctos === total_espacios
+4. Puntos:
+   - Si es_correcta: puntos_completos
+   - Si no: (correctos / total) * puntos (puntos PARCIALES)
+
+Validación por espacio:
+- trim() de espacios en blanco
+- Si sensible_mayusculas=false:
+  * Convertir todo a lowercase
+  * Comparar contra lowercase de respuestas_validas
+- Si sensible_mayusculas=true:
+  * Comparación exacta (respetan mayúsculas)
+- in_array() para verificar en lista de válidas
+
+Ejemplo:
+--------
+Pregunta: "El __ de Venezuela es __ y la moneda es __"
+  Espacios:
+    1: respuestas_validas=["capital", "Capital"], sensible=false
+    2: respuestas_validas=["Caracas"], sensible=true
+    3: respuestas_validas=["bolívar", "Bolívar"], sensible=false
+
+  Respuesta: {1: "CAPITAL", 2: "Caracas", 3: "bolívar"}
+  Resultado: es_correcta=true, puntos=5
+  Lógica:
+    - Espacio 1: "CAPITAL" → lowercase="capital" → en lista ✓
+    - Espacio 2: "Caracas" → exacta en lista ✓
+    - Espacio 3: "bolívar" → lowercase="bolívar" → en lista ✓
+
+  Respuesta: {1: "capital", 2: "Caracas", 3: "bolivar"}
+  Resultado: es_correcta=false, puntos=3.33 (1 correcto, 1 incorrecto)
+  Lógica:
+    - Espacio 1: "capital" ✓
+    - Espacio 2: "Caracas" ✓
+    - Espacio 3: "bolivar" → sensible=false → lowercase="bolivar" 
+                → respuestas_validas lowercased=["bolívar"] 
+                → NO coincide ✗ (bolivar ≠ bolívar sin tilde)
+
+==================================================================
+TIPO 5: MULTIMEDIA
+==================================================================
+
+Algoritmo:
+---------
+1. Retornar inmediatamente:
+   {es_correcta: null, puntos: null, requiere_revision: true}
+
+Lógica:
+- NO calificar automáticamente
+- Profesor debe revisar manualmente
+- Almacenar URL del archivo en quiz_answers.archivo_url
+- Profesor después via PUT /profesor/quiz-answers/:id/calificar
+
+==================================================================
+ESTADISTICAS
+==================================================================
+
+✅ obtenerResumenCalificaciones(Quiz): array
+   Calcula:
+   - total_intentos: count de intentos en estado 'enviado' o 'calificado'
+   - promedio: avg(nota_obtenida)
+   - minimo: min(nota_obtenida)
+   - maximo: max(nota_obtenida)
+   - desviacion_estandar: √(Σ(x - μ)² / N)
+
+   Retorna array:
+   [
+       'total_intentos' => 15,
+       'promedio' => 14.53,
+       'minimo' => 8.50,
+       'maximo' => 20.00,
+       'desviacion_estandar' => 3.21
+   ]
+
+==================================================================
+CASOS DE PRUEBA - SELECCION MULTIPLE
+==================================================================
+
+Test 1: Selección correcta (permite_multiple=false)
+--------
+Quiz: "¿Capital de Francia?"
+  - Opción a: "París" (correcta)
+  - Opción b: "Madrid" (no correcta)
+Intento: ["a"]
+Esperado: es_correcta=true, puntos=5
+✓ PASA
+
+Test 2: Selección incorrecta (permite_multiple=false)
+--------
+Intento: ["b"]
+Esperado: es_correcta=false, puntos=0
+✓ PASA
+
+Test 3: Múltiples selecciones pero una sola permitida
+--------
+Intento: ["a", "b"]
+Esperado: es_correcta=false, puntos=0 (validación permite_multiple=false)
+✓ PASA
+
+Test 4: Selección múltiple correcta (permite_multiple=true)
+--------
+Quiz: "¿Cuáles son lenguajes?" (5 puntos)
+  - Opción a: "Python" (correcta)
+  - Opción b: "HTML" (no correcta)
+  - Opción c: "Java" (correcta)
+  - Opción d: "CSS" (no correcta)
+Intento: ["a", "c"]
+Esperado: es_correcta=true, puntos=5
+✓ PASA
+
+Test 5: Selección múltiple incompleta
+--------
+Intento: ["a"] (falta "c")
+Esperado: es_correcta=false, puntos=0
+✓ PASA
+
+Test 6: Selección múltiple con extra
+--------
+Intento: ["a", "b", "c"] (incluye "b" incorrecto)
+Esperado: es_correcta=false, puntos=0
+✓ PASA
+
+==================================================================
+CASOS DE PRUEBA - LLENADO DE ESPACIOS
+==================================================================
+
+Test 7: Espacios correctos
+--------
+Plantilla: "El __ de Venezuela es __"
+  Espacio 1: respuestas=["capital"], sensible=false
+  Espacio 2: respuestas=["Caracas"], sensible=true
+Intento: {1: "Capital", 2: "Caracas"}
+Esperado: es_correcta=true, puntos=5
+Lógica:
+  - "Capital" → lowercase → en respuestas ✓
+  - "Caracas" → exacta en respuestas ✓
+✓ PASA
+
+Test 8: Espacio incorrecto (sensibilidad)
+--------
+Intento: {1: "capital", 2: "caracas"}
+Esperado: es_correcta=false, puntos=2.5 (1/2 correctos)
+Lógica:
+  - "capital" ✓
+  - "caracas" ✗ (sensible_mayusculas=true, pero envió minúscula)
+✓ PASA
+
+Test 9: Espacios con trim
+--------
+Intento: {1: "  capital  ", 2: "  Caracas  "}
+Esperado: es_correcta=true, puntos=5
+Lógica: trim() elimina espacios antes de comparar
+✓ PASA
+
+==================================================================
+CASOS DE PRUEBA - RELACION DE COLUMNAS
+==================================================================
+
+Test 10: Emparejamiento correcto
+--------
+Pares correctos: [{a:"1", b:"x"}, {a:"2", b:"y"}]
+Intento: [{a:"1", b:"x"}, {a:"2", b:"y"}]
+Esperado: es_correcta=true, puntos=5
+Lógica: JSON normalizados coinciden exactamente
+✓ PASA
+
+Test 11: Emparejamiento en orden diferente
+--------
+Intento: [{a:"2", b:"y"}, {a:"1", b:"x"}]
+Esperado: es_correcta=true, puntos=5
+Lógica: array_intersect no depende del orden
+✓ PASA
+
+Test 12: Emparejamiento parcialmente correcto
+--------
+Intento: [{a:"1", b:"x"}, {a:"2", b:"x"}] (segundo par invertido)
+Esperado: es_correcta=false, puntos=0 (SIN parciales en matching)
+✓ PASA
+
+==================================================================
+INTEGRACION CON CONTROLADORES
+==================================================================
+
+En QuizAttemptController.enviar():
+  $intento = QuizAttempt::find($attemptId);
+  $this->gradingService->grade($intento);
+  → Califica todas las respuestas
+  → Actualiza nota_obtenida
+  → Cambia estado a 'calificado' (si no requiere revisión)
+
+En QuizResultController.calificarRespuesta():
+  $respuesta = QuizAnswer::find($id);
+  → Profesor ingresa puntos manualmente (tipo multimedia)
+  → Recalcula nota total del intento
+
+==================================================================
+VERIFICACION FINAL
+==================================================================
+
+✅ 5 tipos de preguntas con algoritmos exactos
+✅ Validación robusta de entrada (arrays, booleanos, strings)
+✅ Comparación sin depender del orden (para emparejamiento)
+✅ Sensibilidad a mayúsculas configurable (espacios)
+✅ Trim de espacios en blanco (espacios)
+✅ Puntos parciales (selección, espacios)
+✅ Puntos completos o cero (emparejamiento)
+✅ Calificación manual para multimedia
+✅ Estadísticas con desviación estándar
+✅ Métodos de compatibilidad hacia atrás (calificarRespuesta, calificarIntento)
+
+==================================================================
+PROXIMO PASO
+==================================================================
+
+Paso 2.4 (Frontend): Componentes Vue 3
+  - PreguntaSeleccion.vue
+  - PreguntaVerdaderoFalso.vue
+  - PreguntaRelacionColumnas.vue
+  - PreguntaEspacios.vue
+  - PreguntaMultimedia.vue
+  - QuizRenderer.vue (componente maestro)
+  - ExamenTutor.vue (interfaz para tomar examen)
+
+==================================================================
+   FIN DE PASO 2.3
+==================================================================

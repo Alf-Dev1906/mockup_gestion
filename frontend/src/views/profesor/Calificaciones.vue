@@ -22,59 +22,110 @@
 
     <!-- Tabla de estudiantes y calificaciones -->
     <div v-if="materiaSeleccionada" class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-        <div>
-          <h2 class="font-bold text-gray-900">{{ materiaSeleccionada.nombre }}</h2>
-          <p class="text-xs text-gray-500 mt-0.5">{{ estudiantes.length }} estudiantes · Escala 0–20 · Final = 30% + 30% + 40%</p>
+      <!-- Header con stats -->
+      <div class="bg-gradient-to-r from-indigo-600 to-indigo-500 px-6 py-5 text-white">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="font-bold text-xl">{{ materiaSeleccionada.nombre }}</h2>
+            <p class="text-indigo-200 text-sm mt-1">
+              {{ materiaSeleccionada.codigo }} · {{ materiaSeleccionada.creditos }} créditos · {{ materiaSeleccionada.carrera }}
+            </p>
+          </div>
+          <button @click="guardarTodo" :disabled="guardando || !hayCambios"
+            class="bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-indigo-600 font-semibold px-5 py-2.5 rounded-xl transition flex items-center gap-2 shadow-lg">
+            {{ guardando ? '⏳ Guardando...' : '💾 Guardar Todo' }}
+          </button>
         </div>
-        <button @click="guardarTodo" :disabled="guardando || !hayCambios"
-          class="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold px-5 py-2 rounded-xl transition flex items-center gap-2">
-          {{ guardando ? '⏳ Guardando...' : '💾 Guardar Todo' }}
-        </button>
+        
+        <!-- Stats mini -->
+        <div class="grid grid-cols-4 gap-4">
+          <div class="bg-white/10 rounded-lg px-4 py-3 backdrop-blur-sm">
+            <p class="text-2xl font-bold">{{ estudiantes.length }}</p>
+            <p class="text-xs text-indigo-200">Estudiantes</p>
+          </div>
+          <div class="bg-white/10 rounded-lg px-4 py-3 backdrop-blur-sm">
+            <p class="text-2xl font-bold">{{ estudiantesConNotas }}</p>
+            <p class="text-xs text-indigo-200">Con notas</p>
+          </div>
+          <div class="bg-white/10 rounded-lg px-4 py-3 backdrop-blur-sm">
+            <p class="text-2xl font-bold">{{ estudiantesSinNotas }}</p>
+            <p class="text-xs text-indigo-200">Pendientes</p>
+          </div>
+          <div class="bg-white/10 rounded-lg px-4 py-3 backdrop-blur-sm">
+            <p class="text-2xl font-bold">{{ modificados.size }}</p>
+            <p class="text-xs text-indigo-200">Sin guardar</p>
+          </div>
+        </div>
       </div>
 
-      <div v-if="loadingEstudiantes" class="p-8 text-center text-gray-400">Cargando estudiantes...</div>
-      <div v-else-if="!estudiantes.length" class="p-8 text-center text-gray-400">
-        <p class="text-4xl mb-2">👨‍🎓</p><p>Sin estudiantes inscritos en esta materia</p>
+      <div v-if="loadingEstudiantes" class="p-12 text-center text-gray-400">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+        <p>Cargando estudiantes...</p>
+      </div>
+      <div v-else-if="!estudiantes.length" class="p-16 text-center text-gray-400">
+        <p class="text-5xl mb-3">👨‍🎓</p>
+        <p class="font-semibold text-lg">Sin estudiantes inscritos</p>
+        <p class="text-sm mt-1">Esta materia aún no tiene estudiantes registrados</p>
       </div>
       <div v-else class="overflow-x-auto">
         <table class="w-full">
-          <thead class="bg-gray-50 border-b border-gray-100">
+          <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Estudiante</th>
-              <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Matrícula</th>
-              <th class="px-5 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Parcial 1 <span class="font-normal normal-case text-gray-400">(30%)</span></th>
-              <th class="px-5 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Parcial 2 <span class="font-normal normal-case text-gray-400">(30%)</span></th>
-              <th class="px-5 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Final <span class="font-normal normal-case text-gray-400">(40%)</span></th>
-              <th class="px-5 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Nota Final</th>
+              <th class="px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase w-10">#</th>
+              <th class="px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Estudiante</th>
+              <th class="px-5 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Matrícula</th>
+              <th class="px-5 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Parcial 1<br><span class="text-[10px] font-normal">(30%)</span></th>
+              <th class="px-5 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Parcial 2<br><span class="text-[10px] font-normal">(30%)</span></th>
+              <th class="px-5 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Final<br><span class="text-[10px] font-normal">(40%)</span></th>
+              <th class="px-5 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Nota Final</th>
+              <th class="px-5 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Estado</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
-            <tr v-for="e in estudiantes" :key="e.inscripcion_id"
-              class="hover:bg-gray-50"
-              :class="modificados.has(e.inscripcion_id) ? 'bg-yellow-50' : ''">
-              <td class="px-5 py-3">
-                <p class="font-medium text-gray-900 text-sm">{{ e.estudiante.nombre }} {{ e.estudiante.apellido }}</p>
+            <tr v-for="(e, idx) in estudiantes" :key="e.inscripcion_id"
+              class="hover:bg-indigo-50/30 transition-colors"
+              :class="modificados.has(e.inscripcion_id) ? 'bg-yellow-50 border-l-4 border-yellow-400' : ''">
+              <td class="px-5 py-4 text-gray-500 font-medium text-sm">{{ idx + 1 }}</td>
+              <td class="px-5 py-4">
+                <p class="font-medium text-gray-900">{{ e.estudiante.nombre }} {{ e.estudiante.apellido }}</p>
+                <p class="text-xs text-gray-500">CI: {{ e.estudiante.cedula }}</p>
               </td>
-              <td class="px-5 py-3 font-mono text-xs text-gray-600">{{ e.estudiante.matricula }}</td>
+              <td class="px-5 py-4">
+                <span class="font-mono text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                  {{ e.estudiante.matricula }}
+                </span>
+              </td>
               <!-- Inputs de parciales -->
-              <td v-for="campo in ['parcial1', 'parcial2', 'parcial3']" :key="campo" class="px-5 py-3">
+              <td v-for="campo in ['parcial1', 'parcial2', 'parcial3']" :key="campo" class="px-5 py-4">
                 <input
                   v-model.number="e.edicion[campo]"
                   @input="marcarModificado(e)"
                   type="number" min="0" max="20" step="0.01"
-                  class="w-20 text-center border rounded-lg px-2 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  :class="e.edicion[campo] !== null && e.edicion[campo] >= 0 ? 'border-gray-200 text-gray-900' : 'border-dashed border-gray-300 text-gray-400'"
+                  class="w-24 text-center border rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                  :class="e.edicion[campo] !== null && e.edicion[campo] >= 0 
+                    ? 'border-gray-300 text-gray-900 bg-white' 
+                    : 'border-dashed border-gray-300 text-gray-400 bg-gray-50'"
                   placeholder="—"
                 />
               </td>
               <!-- Nota calculada -->
-              <td class="px-5 py-3 text-center">
-                <span class="text-base font-bold"
+              <td class="px-5 py-4 text-center">
+                <span class="text-lg font-bold"
                   :class="notaFinal(e) === null ? 'text-gray-300'
                     : notaFinal(e) >= 10 ? 'text-green-600'
                     : 'text-red-600'">
                   {{ notaFinal(e) !== null ? notaFinal(e).toFixed(2) : '—' }}
+                </span>
+              </td>
+              <!-- Estado -->
+              <td class="px-5 py-4 text-center">
+                <span v-if="notaFinal(e) !== null"
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                  :class="notaFinal(e) >= 10 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+                  {{ notaFinal(e) >= 10 ? '✓ Aprobado' : '✗ Reprobado' }}
+                </span>
+                <span v-else class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
+                  ⏳ Pendiente
                 </span>
               </td>
             </tr>
@@ -107,6 +158,14 @@ const materiaSeleccionada = ref(null)
 const estudiantes = ref([])
 const modificados = ref(new Set())
 
+const estudiantesConNotas = computed(() => 
+  estudiantes.value.filter(e => notaFinal(e) !== null).length
+)
+
+const estudiantesSinNotas = computed(() => 
+  estudiantes.value.filter(e => notaFinal(e) === null).length
+)
+
 const hayCambios = computed(() => modificados.value.size > 0)
 
 const notaFinal = e => {
@@ -127,13 +186,14 @@ async function cargarEstudiantes() {
   modificados.value.clear()
   try {
     const { data } = await api.get(`/profesor/materias/${materiaSeleccionada.value.id}/estudiantes`)
+    const apiData = data.data || data // Soporte para respuesta con wrapper
     // Agregar campo edicion con copia de calificaciones actuales
-    estudiantes.value = data.map(e => ({
+    estudiantes.value = (Array.isArray(apiData) ? apiData : []).map(e => ({
       ...e,
       edicion: {
-        parcial1: e.calificacion?.parcial1 ?? null,
-        parcial2: e.calificacion?.parcial2 ?? null,
-        parcial3: e.calificacion?.parcial3 ?? null,
+        parcial1: e.calificacion?.nota_final !== null ? e.calificacion?.nota_corte_1 : null,
+        parcial2: e.calificacion?.nota_final !== null ? e.calificacion?.nota_corte_2 : null,
+        parcial3: e.calificacion?.nota_final !== null ? e.calificacion?.nota_corte_3 : null,
       }
     }))
   } finally { loadingEstudiantes.value = false }
@@ -172,12 +232,17 @@ async function guardarTodo() {
 onMounted(async () => {
   try {
     const { data } = await api.get('/profesor/materias')
-    // Obtener materias únicas
-    const map = new Map()
-    for (const h of data) {
-      if (!map.has(h.materia.id)) map.set(h.materia.id, h.materia)
-    }
-    opcionesMaterias.value = [...map.values()]
+    const apiData = data.data || data // Soporte para respuesta con wrapper {success, data}
+    
+    // El backend ahora devuelve materias agrupadas, no horarios individuales
+    opcionesMaterias.value = apiData.map(m => ({
+      id: m.id,
+      codigo: m.codigo,
+      nombre: m.nombre,
+      creditos: m.creditos,
+      carrera: m.carrera,
+    }))
+    
     // Si llega con query param de materia
     const qMateria = route.query.materia
     if (qMateria) {

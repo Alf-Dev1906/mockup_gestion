@@ -27,6 +27,15 @@ trait HasRoleAuthorization
     }
 
     /**
+     * Alias de hasRole() para mayor claridad semántica
+     * Verifica si el usuario tiene el nivel mínimo de rol requerido
+     */
+    public function hasMinimumRole(string $role): bool
+    {
+        return $this->hasRole($role);
+    }
+
+    /**
      * Verifica si el usuario tiene exactamente un rol
      */
     public function hasExactRole(string $role): bool
@@ -147,7 +156,24 @@ trait HasRoleAuthorization
     }
 
     /**
-     * Verifica si el estudiante está activo (solo para estudiantes)
+     * Verifica si el usuario puede realizar una acción sobre otro usuario
+     * basado en la jerarquía de roles (solo puede gestionar roles inferiores)
+     */
+    public function canManageUser(User $targetUser): bool
+    {
+        return $this->getRoleLevel() > $targetUser->getRoleLevel();
+    }
+
+    /**
+     * Verifica si el usuario puede impersonar otro rol (solo desarrollador)
+     */
+    public function canImpersonate(): bool
+    {
+        return $this->isDesarrollador();
+    }
+
+    /**
+     * Verifica si el usuario es estudiante activo (solo para estudiantes)
      */
     public function isEstudianteActivo(): bool
     {

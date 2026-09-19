@@ -20,7 +20,7 @@ class AdmisionController extends Controller
         $user = Auth::user();
         
         // Obtener el estudiante asociado al usuario
-        $estudiante = Estudiante::where('user_id', $user->id)->first();
+        $estudiante = Estudiante::where('email', $user->email)->first();
         
         if (!$estudiante) {
             return response()->json([
@@ -80,7 +80,7 @@ class AdmisionController extends Controller
         }
         
         $user = Auth::user();
-        $estudiante = Estudiante::where('user_id', $user->id)->first();
+        $estudiante = Estudiante::where('email', $user->email)->first();
         
         if (!$estudiante) {
             return response()->json(['message' => 'Estudiante no encontrado'], 404);
@@ -137,7 +137,7 @@ class AdmisionController extends Controller
         }
         
         $user = Auth::user();
-        $estudiante = Estudiante::where('user_id', $user->id)->first();
+        $estudiante = Estudiante::where('email', $user->email)->first();
         
         if (!$estudiante) {
             return response()->json(['message' => 'Estudiante no encontrado'], 404);
@@ -200,7 +200,7 @@ class AdmisionController extends Controller
         }
         
         $user = Auth::user();
-        $estudiante = Estudiante::where('user_id', $user->id)->first();
+        $estudiante = Estudiante::where('email', $user->email)->first();
         
         if (!$estudiante) {
             return response()->json(['message' => 'Estudiante no encontrado'], 404);
@@ -265,7 +265,7 @@ class AdmisionController extends Controller
         }
         
         $user = Auth::user();
-        $estudiante = Estudiante::where('user_id', $user->id)->first();
+        $estudiante = Estudiante::where('email', $user->email)->first();
         
         if (!$estudiante) {
             return response()->json(['message' => 'Estudiante no encontrado'], 404);

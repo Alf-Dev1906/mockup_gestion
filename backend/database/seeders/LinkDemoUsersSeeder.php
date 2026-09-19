@@ -20,9 +20,10 @@ class LinkDemoUsersSeeder extends Seeder
         if ($estudianteUser) {
             $carrera = DB::table('carreras')->first();
             
-            Estudiante::updateOrCreate(
+            $estudiante = Estudiante::updateOrCreate(
                 ['email' => 'estudiante@universidad.edu.ve'],
                 [
+                    'user_id' => $estudianteUser->id,
                     'nombre' => 'Estudiante',
                     'apellido' => 'Demo',
                     'cedula' => 'V-99999991',
@@ -38,17 +39,18 @@ class LinkDemoUsersSeeder extends Seeder
                     'estatus' => 'activo',
                 ]
             );
-            echo "✓ Usuario ESTUDIANTE vinculado\n";
+            echo "✓ Usuario ESTUDIANTE vinculado (user_id: {$estudianteUser->id}, estudiante_id: {$estudiante->id})\n";
         }
 
-        // 2. Usuario SOLICITANTE - también es estudiante
+        // 2. Usuario SOLICITANTE - también es estudiante PERO con estatus inactivo
         $solicitanteUser = User::where('email', 'solicitante@universidad.edu.ve')->first();
         if ($solicitanteUser) {
             $carrera = DB::table('carreras')->skip(1)->first();
             
-            Estudiante::updateOrCreate(
+            $solicitante = Estudiante::updateOrCreate(
                 ['email' => 'solicitante@universidad.edu.ve'],
                 [
+                    'user_id' => $solicitanteUser->id,
                     'nombre' => 'Solicitante',
                     'apellido' => 'Demo',
                     'cedula' => 'V-99999992',
@@ -61,10 +63,32 @@ class LinkDemoUsersSeeder extends Seeder
                     'semestre_actual' => 1,
                     'indice_academico' => 0.00,
                     'creditos_aprobados' => 0,
-                    'estatus' => 'activo',
+                    'estatus' => 'inactivo', // IMPORTANTE: inactivo para que sea considerado solicitante
                 ]
             );
-            echo "✓ Usuario SOLICITANTE vinculado\n";
+            
+            // Crear solicitud de admisión si no existe
+            DB::table('solicitudes_admision')->updateOrInsert(
+                ['estudiante_id' => $solicitante->id],
+                [
+                    'numero_referencia' => 'SOL-2026-DEMO-002',
+                    'estado' => 'en_revision',
+                    'fecha_envio' => now()->subDays(5),
+                    'nivel_educativo' => 'bachiller',
+                    'institucion_egreso' => 'Liceo Nacional Andrés Bello',
+                    'año_graduacion' => 2025,
+                    'promedio_notas' => 18.50,
+                    'paso1_completado' => true,
+                    'paso2_completado' => true,
+                    'paso3_completado' => true,
+                    'paso4_completado' => true,
+                    'paso5_completado' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+            
+            echo "✓ Usuario SOLICITANTE vinculado (user_id: {$solicitanteUser->id}, estudiante_id: {$solicitante->id}, estatus: inactivo)\n";
         }
 
         // 3. Usuario PROFESOR - crear registro en tabla profesores
@@ -72,9 +96,10 @@ class LinkDemoUsersSeeder extends Seeder
         if ($profesorUser) {
             $facultad = DB::table('facultades')->first();
             
-            Profesor::updateOrCreate(
+            $profesor = Profesor::updateOrCreate(
                 ['email' => 'profesor@universidad.edu.ve'],
                 [
+                    'user_id' => $profesorUser->id,
                     'facultad_id' => $facultad->id ?? 1,
                     'nombre' => 'Profesor',
                     'apellido' => 'Demo',
@@ -92,7 +117,7 @@ class LinkDemoUsersSeeder extends Seeder
                     'estatus' => 'activo',
                 ]
             );
-            echo "✓ Usuario PROFESOR vinculado\n";
+            echo "✓ Usuario PROFESOR vinculado (user_id: {$profesorUser->id}, profesor_id: {$profesor->id})\n";
         }
 
         // Los roles ADMIN, SOPORTE y DESARROLLADOR no necesitan registros adicionales

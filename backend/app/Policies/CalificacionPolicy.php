@@ -23,13 +23,13 @@ class CalificacionPolicy
     {
         // Estudiante puede ver solo sus propias calificaciones
         if ($user->isEstudiante()) {
-            $estudiante = \App\Models\Estudiante::where('user_id', $user->id)->first();
+            $estudiante = \App\Models\Estudiante::where('email', $user->email)->first();
             return $estudiante && $calificacion->inscripcion->estudiante_id === $estudiante->id;
         }
 
         // Profesor puede ver calificaciones de sus materias
         if ($user->isProfesor()) {
-            $profesor = \App\Models\Profesor::where('user_id', $user->id)->first();
+            $profesor = \App\Models\Profesor::where('email', $user->email)->first();
             return $profesor && $this->profesorTeachesMateria($profesor, $calificacion->inscripcion->materia_id);
         }
 
@@ -53,7 +53,7 @@ class CalificacionPolicy
     {
         // Profesor solo puede actualizar calificaciones de sus materias
         if ($user->isProfesor() && !$user->hasRole('administrativo')) {
-            $profesor = \App\Models\Profesor::where('user_id', $user->id)->first();
+            $profesor = \App\Models\Profesor::where('email', $user->email)->first();
             return $profesor && $this->profesorTeachesMateria($profesor, $calificacion->inscripcion->materia_id);
         }
 

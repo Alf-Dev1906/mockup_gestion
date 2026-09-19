@@ -125,7 +125,26 @@ const resumenMaterias = computed(() => {
 })
 
 onMounted(async () => {
-  try { const { data } = await api.get('/estudiante/horarios'); horarios.value = data }
+  try { 
+    const { data } = await api.get('/estudiante/horario')
+    const apiData = data.data || data // Soporte para respuesta con wrapper {success, data}
+    
+    // Convertir el objeto de días en array plano para el componente
+    const horariosFlat = []
+    for (const [dia, clases] of Object.entries(apiData)) {
+      for (const clase of clases) {
+        horariosFlat.push({
+          ...clase,
+          dia_semana: dia.charAt(0).toUpperCase() + dia.slice(1), // Capitalizar primera letra
+          materia_codigo: clase.codigo_materia,
+          materia_nombre: clase.materia,
+          aula_codigo: clase.aula,
+          aula_edificio: clase.edificio,
+        })
+      }
+    }
+    horarios.value = horariosFlat
+  }
   finally { loading.value = false }
 })
 </script>
