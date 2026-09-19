@@ -67,173 +67,677 @@ También verás los datos separados:
 6. Click en **"Connect"**
 
 ### Paso 2.2: Configurar Web Service
-Completa el formulario con estos datos:
+Ahora verás un formulario con varios campos. Completa cada uno siguiendo estas instrucciones:
 
-```
-Name: gestion-uni-backend
-Region: Oregon (USA) - DEBE ser la misma que la DB
-Branch: main
-Root Directory: backend
-Runtime: PHP
-Build Command: composer install --no-dev --optimize-autoloader && php artisan config:cache && php artisan route:cache
-Start Command: php artisan serve --host=0.0.0.0 --port=$PORT
-Instance Type: Free
-```
+#### Campo 1: **Name** (Nombre del servicio)
+- **Qué escribir:** `gestion-uni-backend`
+- **Descripción:** Este será el nombre de tu backend y parte de la URL
+
+#### Campo 2: **Region** (Región del servidor)
+- **Qué seleccionar:** `Oregon (USA)`
+- **⚠️ IMPORTANTE:** DEBE ser la misma región que tu base de datos (Paso 1.2)
+- **Por qué:** Para menor latencia entre el backend y la database
+
+#### Campo 3: **Branch** (Rama de Git)
+- **Qué escribir:** `main`
+- **Descripción:** La rama principal de tu repositorio
+
+#### Campo 4: **Root Directory** (Carpeta raíz)
+- **Qué escribir:** `backend`
+- **Descripción:** Como tu proyecto Laravel está en la carpeta `backend/`, Render debe buscar ahí
+
+#### Campo 5: **Runtime** (Entorno de ejecución)
+- **⚠️ CAMBIO IMPORTANTE:** Selecciona **`Docker`** de la lista desplegable
+- **Por qué:** Render no tiene PHP nativo, pero Laravel puede correr en Docker
+- **Opciones que verás:** Docker, Elixir, Go, Node, Python 3, Ruby, Rust
+- **Selecciona:** Docker (primera opción de la lista)
 
 ### Paso 2.3: Configurar Variables de Entorno
-En la sección **"Environment Variables"**, añade las siguientes:
 
-**Variables básicas de Laravel:**
-```env
-APP_NAME="Gestion Universitaria"
-APP_ENV=production
-APP_KEY=
-APP_DEBUG=false
-APP_URL=https://gestion-uni-backend.onrender.com
+Después de seleccionar Docker, **haz scroll hacia abajo** en la misma página hasta encontrar la sección **"Environment Variables"**.
 
-LOG_CHANNEL=stack
-LOG_LEVEL=error
+#### 📍 Ubicación visual:
+- Está debajo de los campos que acabas de llenar
+- Verás un título grande que dice **"Environment Variables"**
+- Debajo hay un botón azul que dice **"Add Environment Variable"**
+
+#### Cómo añadir las variables:
+
+**Paso 1:** Click en el botón **"Add Environment Variable"**
+
+**Paso 2:** Se abrirá un formulario con dos campos:
+- **Key** (Clave): Aquí va el nombre de la variable (ej: `APP_NAME`)
+- **Value** (Valor): Aquí va el valor (ej: `Gestion Universitaria`)
+
+**Paso 3:** Añade TODAS estas variables una por una:
+
+#### ✅ Grupo 1: Variables Básicas de Laravel
+Click en **"Add Environment Variable"** y añade:
+
+**Variable 1:**
+```
+Key: APP_NAME
+Value: Gestion Universitaria
+```
+Click en **"Save"** o presiona Enter
+
+**Variable 2:**
+```
+Key: APP_ENV
+Value: production
 ```
 
-**Variables de Base de Datos PostgreSQL:**
-```env
-DB_CONNECTION=pgsql
-DB_HOST=[TU_HOST_DE_RENDER]
-DB_PORT=5432
-DB_DATABASE=gestion_uni_db
-DB_USERNAME=[TU_USERNAME_DE_RENDER]
-DB_PASSWORD=[TU_PASSWORD_DE_RENDER]
+**Variable 3:**
+```
+Key: APP_KEY
+Value: (déjalo VACÍO por ahora, lo llenaremos en el Paso 2.4)
 ```
 
-⚠️ **Reemplaza los valores entre corchetes con los datos de tu PostgreSQL de Render (Paso 1.3)**
-
-**Variables de Cache y Sessions:**
-```env
-CACHE_DRIVER=file
-SESSION_DRIVER=file
-SESSION_LIFETIME=120
-QUEUE_CONNECTION=sync
+**Variable 4:**
+```
+Key: APP_DEBUG
+Value: false
 ```
 
-**Variables de CORS (importante para el frontend):**
-```env
-SANCTUM_STATEFUL_DOMAINS=gestion-uni-frontend.netlify.app,localhost:5173
-SESSION_DOMAIN=.onrender.com
+**Variable 5:**
+```
+Key: APP_URL  
+Value: https://gestion-uni-backend.onrender.com
+```
+⚠️ **Nota:** Este será tu URL final, Render lo asignará automáticamente
+
+**Variable 6:**
+```
+Key: LOG_CHANNEL
+Value: stack
 ```
 
-**Variables adicionales (opcional pero recomendado):**
-```env
-BCRYPT_ROUNDS=10
+**Variable 7:**
+```
+Key: LOG_LEVEL
+Value: error
 ```
 
-### Paso 2.4: Generar APP_KEY
-Como no podemos ejecutar `php artisan key:generate` antes del deploy, genera una clave manualmente:
+---
 
-1. Abre una terminal local y ejecuta:
-```bash
-php -r "echo 'base64:' . base64_encode(random_bytes(32)) . PHP_EOL;"
+#### ✅ Grupo 2: Variables de Base de Datos PostgreSQL
+
+**⚠️ IMPORTANTE:** Aquí necesitas los datos del Paso 1.3. Abre en otra pestaña la página de tu PostgreSQL en Render para copiar los valores.
+
+**Variable 8:**
+```
+Key: DB_CONNECTION
+Value: pgsql
 ```
 
-2. Copia el resultado (ejemplo: `base64:ABC123XYZ...`)
-3. Pégalo en la variable `APP_KEY` en Render
+**Variable 9:**
+```
+Key: DB_HOST
+Value: [COPIA el HOST de tu PostgreSQL]
+```
+**Dónde encontrarlo:**
+1. Ve a tu PostgreSQL en Render
+2. Click en la pestaña **"Info"**
+3. En la sección **"Connections"**, copia el valor de **"Hostname"**
+4. Ejemplo: `dpg-abc123-a.oregon-postgres.render.com`
 
-O usa esta clave pre-generada (solo para demo):
+**Variable 10:**
+```
+Key: DB_PORT
+Value: 5432
+```
+
+**Variable 11:**
+```
+Key: DB_DATABASE
+Value: gestion_uni_db
+```
+
+**Variable 12:**
+```
+Key: DB_USERNAME
+Value: [COPIA el USERNAME de tu PostgreSQL]
+```
+**Dónde encontrarlo:**
+1. Misma página de tu PostgreSQL
+2. Sección **"Connections"**
+3. Copia el valor de **"Username"**
+4. Ejemplo: `gestion_uni_db_user`
+
+**Variable 13:**
+```
+Key: DB_PASSWORD
+Value: [COPIA el PASSWORD de tu PostgreSQL]
+```
+**Dónde encontrarlo:**
+1. Misma página de tu PostgreSQL
+2. Sección **"Connections"**
+3. Copia el valor de **"Password"**
+4. Es una cadena larga, ejemplo: `abc123xyz789...`
+
+---
+
+#### ✅ Grupo 3: Variables de Cache y Sessions
+
+**Variable 14:**
+```
+Key: CACHE_DRIVER
+Value: file
+```
+
+**Variable 15:**
+```
+Key: SESSION_DRIVER
+Value: file
+```
+
+**Variable 16:**
+```
+Key: SESSION_LIFETIME
+Value: 120
+```
+
+**Variable 17:**
+```
+Key: QUEUE_CONNECTION
+Value: sync
+```
+
+---
+
+#### ✅ Grupo 4: Variables de CORS (para el frontend)
+
+**Variable 18:**
+```
+Key: SANCTUM_STATEFUL_DOMAINS
+Value: gestion-uni-frontend.netlify.app,localhost:5173
+```
+
+**Variable 19:**
+```
+Key: SESSION_DOMAIN
+Value: .onrender.com
+```
+
+**Variable 20:**
+```
+Key: BCRYPT_ROUNDS
+Value: 10
+```
+
+---
+
+### Paso 2.4: Generar APP_KEY de Laravel
+
+Ahora necesitamos generar una clave de encriptación para Laravel.
+
+#### Opción A: Generar desde tu terminal local
+
+1. **Abre PowerShell** en tu computadora
+2. **Navega** a la carpeta del proyecto:
+   ```bash
+   cd C:\Users\danie\Documents\Gestion_uni\backend
+   ```
+3. **Ejecuta:**
+   ```bash
+   php artisan key:generate --show
+   ```
+4. **Copia** el resultado (ejemplo: `base64:kPZ5D0qJ8KvLxN...`)
+
+#### Opción B: Usar esta clave pre-generada (solo para demo)
 ```
 base64:kPZ5D0qJ8KvLxN2MwB3cR4fT5gU6hV7iW8xY9zA0bC1=
 ```
 
-### Paso 2.5: Deploy Inicial
-1. Click en **"Create Web Service"**
-2. Render comenzará a construir e instalar el backend
-3. Este proceso toma **5-10 minutos** la primera vez
-4. Verás logs en tiempo real del build
+#### Ahora añade la clave:
+1. **Vuelve** a la página de Render donde están las variables de entorno
+2. **Busca** la variable `APP_KEY` que dejamos vacía
+3. **Click** en el ícono de lápiz ✏️ al lado de `APP_KEY`
+4. **Pega** la clave generada en el campo **Value**
+5. **Click** en **"Save"**
 
-**Logs esperados:**
+---
+
+### Paso 2.5: Verificar Configuración Antes de Deploy
+
+Antes de hacer click en el botón final, **verifica que todo esté correcto:**
+
+#### Checklist de configuración:
+- [ ] Name: `gestion-uni-backend` ✓
+- [ ] Region: `Oregon (USA)` ✓
+- [ ] Branch: `main` ✓
+- [ ] Root Directory: `backend` ✓
+- [ ] Runtime: `Docker` ✓
+- [ ] **20 variables de entorno** añadidas ✓
+- [ ] `APP_KEY` tiene un valor (no está vacío) ✓
+- [ ] Credenciales de PostgreSQL son correctas ✓
+
+#### Haz scroll hacia abajo hasta el final de la página
+
+Verás una sección que dice **"Instance Type"**:
+- **Selecciona:** `Free`
+- **Descripción:** 750 horas gratis al mes (suficiente para demo)
+
+---
+
+### Paso 2.6: Iniciar Deploy
+
+¡Ahora sí! Todo está configurado.
+
+1. **Haz scroll** hasta el final de la página
+2. Verás un botón azul grande que dice **"Create Web Service"**
+3. **Click** en ese botón
+4. Render te llevará a una nueva página que muestra:
+   - El **logo de carga** girando
+   - Un panel de **logs en tiempo real**
+   - El estado actual del deploy
+
+#### 📺 Qué verás durante el deploy:
+
+**Fase 1: Building (Construyendo) - 3-5 minutos**
 ```
-Installing dependencies from lock file
+==> Cloning from GitHub...
+==> Checking out commit abc123...
+==> Building Docker image...
+Step 1/10 : FROM php:8.2-cli
+...
+```
+
+**Fase 2: Installing (Instalando) - 2-3 minutos**
+```
+Installing dependencies from composer.json
 ...
 Generating optimized autoload files
-...
-Configuration cached successfully!
-Routes cached successfully!
-...
-Deploy succeeded!
 ```
+
+**Fase 3: Starting (Iniciando) - 1 minuto**
+```
+Laravel development server started: http://0.0.0.0:8080
+```
+
+**✅ Deploy Completo:**
+Verás en la parte superior un badge verde que dice **"Live"**
+
+⏱️ **Tiempo total:** 5-10 minutos
 
 ---
 
 ## PARTE 3: Ejecutar Migraciones y Seeders
 
-### Paso 3.1: Conectar a la Shell de Render
-Una vez que el deploy esté completo (estado "Live"):
+### Paso 3.1: Acceder a la Shell de Render
 
-1. En la página de tu Web Service, ve a la pestaña **"Shell"**
-2. Click en **"Launch Shell"**
-3. Espera a que se abra una terminal interactiva
+Una vez que el deploy esté completo y veas el badge **"Live"** en verde:
 
-### Paso 3.2: Ejecutar Migraciones
-En la shell de Render, ejecuta:
+#### 📍 Dónde hacer click:
 
-```bash
-# Limpiar cache de configuración
-php artisan config:clear
+1. **Estás en la página de tu Web Service** (gestion-uni-backend)
+2. **Mira la parte superior** de la página, verás varias pestañas:
+   ```
+   [Events] [Logs] [Shell] [Metrics] [Settings]
+   ```
+3. **Click en la pestaña "Shell"** (la tercera desde la izquierda)
 
-# Verificar conexión a DB
-php artisan migrate:status
+#### Qué verás:
 
-# Ejecutar migraciones
-php artisan migrate --force
+Una página con:
+- Un título que dice **"Shell"**
+- Una descripción: "Connect to a shell on your service"
+- Un botón azul grande que dice **"Launch Shell"**
 
-# Deberías ver:
-# Migrating: 2014_10_12_000000_create_users_table
-# Migrated: 2014_10_12_000000_create_users_table (XXX.XXms)
-# ... (todas las migraciones)
+4. **Click en "Launch Shell"**
+
+#### Espera 10-15 segundos mientras se abre la terminal
+
+Verás:
+```
+Connecting to shell...
+Connected!
+~ $
 ```
 
-### Paso 3.3: Ejecutar Seeders de Demo Data
+El cursor parpadeante `$` indica que puedes escribir comandos.
+
+---
+
+### Paso 3.2: Verificar Entorno y Conexión
+
+Antes de ejecutar migraciones, verifica que todo esté bien:
+
+#### Comando 1: Verificar versión de PHP
+Escribe y presiona Enter:
 ```bash
-# Seeder de usuarios base
+php -v
+```
+
+**Resultado esperado:**
+```
+PHP 8.2.x (cli) (built: ...)
+```
+
+#### Comando 2: Verificar que estás en el directorio correcto
+```bash
+pwd
+```
+
+**Resultado esperado:**
+```
+/var/www
+```
+
+#### Comando 3: Limpiar cache de configuración
+```bash
+php artisan config:clear
+```
+
+**Resultado esperado:**
+```
+Configuration cache cleared successfully!
+```
+
+#### Comando 4: Verificar conexión a la base de datos
+```bash
+php artisan migrate:status
+```
+
+**Resultado esperado:**
+```
+Migration table not found.
+```
+Esto es NORMAL en la primera vez, significa que la BD está vacía y lista.
+
+**Si ves un error de conexión:**
+```
+SQLSTATE[08006] Could not connect to server
+```
+⛔ **DETENTE:** Las credenciales de DB están mal. Ve al Paso 2.3 y verifica.
+
+---
+
+### Paso 3.3: Ejecutar Migraciones (Crear Tablas)
+
+Ahora vamos a crear todas las tablas en PostgreSQL.
+
+#### Comando:
+```bash
+php artisan migrate --force
+```
+
+**⏱️ Tiempo:** 30-60 segundos
+
+#### Qué verás (ejemplo real):
+```
+   INFO  Preparing database.
+
+  Creating migration table ............................. 12ms DONE
+
+   INFO  Running migrations.
+
+  2014_10_12_000000_create_users_table ................. 85ms DONE
+  2014_10_12_100000_create_password_reset_tokens_table . 45ms DONE
+  2019_08_19_000000_create_failed_jobs_table ........... 52ms DONE
+  2019_12_14_000001_create_personal_access_tokens ...... 78ms DONE
+  2025_01_01_000001_create_facultades_table ............ 38ms DONE
+  2025_01_01_000002_create_carreras_table .............. 55ms DONE
+  2025_01_01_000003_create_materias_table .............. 62ms DONE
+  2025_01_01_000004_create_aulas_table ................. 41ms DONE
+  2025_01_01_000005_create_profesores_table ............ 69ms DONE
+  2025_01_01_000006_create_estudiantes_table ........... 98ms DONE
+  2025_01_01_000007_create_horarios_table .............. 85ms DONE
+  2025_01_01_000008_create_inscripciones_table ......... 92ms DONE
+  2025_01_01_000009_create_calificaciones_table ........ 74ms DONE
+  2025_01_01_000010_create_quizzes_table ............... 81ms DONE
+  ... (y más tablas)
+```
+
+✅ **Éxito:** Verás `DONE` en todas las líneas
+
+---
+
+### Paso 3.4: Ejecutar Seeders (Llenar con Datos)
+
+Ahora vamos a llenar la base de datos con datos de demostración.
+
+#### ⚠️ IMPORTANTE: Orden de los seeders
+Los seeders DEBEN ejecutarse en este orden exacto, uno por uno.
+
+---
+
+#### Seeder 1: UserSeeder (Crear 6 usuarios)
+```bash
 php artisan db:seed --class=UserSeeder --force
+```
 
-# Seeder de datos de demo (96K estudiantes, 5K profesores, etc.)
+**⏱️ Tiempo:** 5 segundos
+
+**Resultado esperado:**
+```
+   INFO  Seeding database.
+
+✅ 6 usuarios creados exitosamente
+   - developer@universidad.edu.ve (desarrollador)
+   - soporte@universidad.edu.ve (soporte_it)
+   - admin@universidad.edu.ve (administrativo)
+   - profesor@universidad.edu.ve (profesor)
+   - estudiante@universidad.edu.ve (estudiante)
+   - solicitante@universidad.edu.ve (estudiante)
+```
+
+---
+
+#### Seeder 2: DemoSeeder (Crear 96K estudiantes, 5K profesores, etc.)
+```bash
 php artisan db:seed --class=DemoSeeder --force
+```
 
-# Vincular usuarios demo
+**⏱️ Tiempo:** 8-12 minutos ⏳
+
+**⚠️ NO CIERRES LA TERMINAL** durante este proceso
+
+**Qué verás:**
+```
+   INFO  Seeding database.
+
+🎓 Creando 40 facultades...
+✅ 40 facultades creadas
+
+🎓 Creando 200 carreras...
+✅ 200 carreras creadas
+
+📚 Creando 2000 materias...
+✅ 2000 materias creadas
+
+... (mucha información)
+
+👥 Creando 96000 estudiantes...
+[====================>  ] 50% (48000/96000) - 4 min restantes
+...
+✅ 96000 estudiantes creados
+```
+
+**Verás barras de progreso** para los procesos largos.
+
+✅ **Éxito:** Al final verás un resumen con la cantidad de registros creados
+
+---
+
+#### Seeder 3: LinkDemoUsersSeeder (Vincular usuarios con tablas)
+```bash
 php artisan db:seed --class=LinkDemoUsersSeeder --force
+```
 
-# Solicitudes de admisión
+**⏱️ Tiempo:** 5 segundos
+
+**Resultado esperado:**
+```
+   INFO  Seeding database.
+
+🔗 Vinculando usuarios demo con sus tablas correspondientes...
+
+✓ Usuario ESTUDIANTE vinculado (user_id: 5, estudiante_id: 96001)
+✓ Usuario SOLICITANTE vinculado (user_id: 6, estudiante_id: 96002)
+✓ Usuario PROFESOR vinculado (user_id: 4, profesor_id: 5001)
+✓ Usuarios ADMIN, SOPORTE y DESARROLLADOR no requieren vinculación
+
+✅ Vinculación completada!
+```
+
+---
+
+#### Seeder 4: SolicitudesYPagosSeeder (20 solicitudes de admisión)
+```bash
 php artisan db:seed --class=SolicitudesYPagosSeeder --force
+```
 
-# Pagos mockup
+**⏱️ Tiempo:** 10 segundos
+
+**Resultado esperado:**
+```
+✅ 20 solicitudes de admisión creadas:
+   - Estado pendiente: 8
+   - Estado en_revision: 6
+   - Estado aprobada: 4
+   - Estado rechazada: 2
+```
+
+---
+
+#### Seeder 5: PagosMockupSeeder (448 pagos)
+```bash
 php artisan db:seed --class=PagosMockupSeeder --force
+```
 
-# Calificaciones mockup
+**⏱️ Tiempo:** 15 segundos
+
+**Resultado esperado:**
+```
+✅ 448 pagos creados exitosamente.
+   - Pendientes: 137
+   - Pagados: 168
+   - Verificados: 143
+```
+
+---
+
+#### Seeder 6: CalificacionesMockupSeeder (404+ calificaciones)
+```bash
 php artisan db:seed --class=CalificacionesMockupSeeder --force
+```
 
-# Datos del profesor demo
+**⏱️ Tiempo:** 20 segundos
+
+**Resultado esperado:**
+```
+✅ 404 calificaciones creadas exitosamente
+```
+
+---
+
+#### Seeder 7: ProfesorDemoDataSeeder (Tareas, exámenes, asistencia)
+```bash
 php artisan db:seed --class=ProfesorDemoDataSeeder --force
+```
 
-# Datos del estudiante demo
+**⏱️ Tiempo:** 30 segundos
+
+**Resultado esperado:**
+```
+📚 Creando datos para 8 horarios...
+✅ Datos creados exitosamente:
+   - Tareas: 21 (con 8 entregas)
+   - Exámenes: 17 (con 11 intentos)
+   - Sesiones de asistencia: 28 (con 54 registros)
+```
+
+---
+
+#### Seeder 8: EstudianteDemoDataSeeder (Contenido del estudiante)
+```bash
 php artisan db:seed --class=EstudianteDemoDataSeeder --force
 ```
 
-⏱️ **Tiempo estimado:** 10-15 minutos para todos los seeders
+**⏱️ Tiempo:** 30 segundos
 
-### Paso 3.4: Verificar Datos
-```bash
-# Verificar usuarios
-php artisan tinker
->>> \App\Models\User::count();
-# Debe devolver: 6
-
->>> \App\Models\Estudiante::count();
-# Debe devolver: 96000+
-
->>> \App\Models\Profesor::count();
-# Debe devolver: 5000+
-
->>> exit
+**Resultado esperado:**
 ```
+📚 Creando datos para 6 materias inscritas...
+✅ Datos creados exitosamente:
+   - Tareas: 13 (con 3 entregas)
+   - Exámenes: 15 (con 5 intentos)
+```
+
+---
+
+### Paso 3.5: Verificar que Todo se Creó Correctamente
+
+Ahora vamos a verificar que todos los datos estén en la base de datos.
+
+#### Comando para abrir Laravel Tinker (consola interactiva):
+```bash
+php artisan tinker
+```
+
+**Verás:**
+```
+Psy Shell v0.11.x (PHP 8.2.x)
+>>>
+```
+
+El cursor `>>>` indica que puedes escribir comandos de PHP/Laravel.
+
+#### Verificación 1: Contar usuarios
+Escribe y presiona Enter:
+```php
+\App\Models\User::count();
+```
+
+**Resultado esperado:** `6`
+
+#### Verificación 2: Contar estudiantes
+```php
+\App\Models\Estudiante::count();
+```
+
+**Resultado esperado:** `96002` (96,000 del demo + 2 demo users)
+
+#### Verificación 3: Contar profesores
+```php
+\App\Models\Profesor::count();
+```
+
+**Resultado esperado:** `5001` (5,000 del demo + 1 demo user)
+
+#### Verificación 4: Contar inscripciones
+```php
+\App\Models\Inscripcion::count();
+```
+
+**Resultado esperado:** `138000+`
+
+#### Verificación 5: Listar emails de usuarios demo
+```php
+\App\Models\User::pluck('email');
+```
+
+**Resultado esperado:**
+```php
+[
+   "developer@universidad.edu.ve",
+   "soporte@universidad.edu.ve",
+   "admin@universidad.edu.ve",
+   "profesor@universidad.edu.ve",
+   "estudiante@universidad.edu.ve",
+   "solicitante@universidad.edu.ve",
+]
+```
+
+#### Salir de Tinker:
+```php
+exit
+```
+
+Volverás a ver el prompt normal: `~ $`
+
+✅ **Si todos los números coinciden, ¡todo está perfecto!**
 
 ---
 
