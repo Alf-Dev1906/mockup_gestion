@@ -27,8 +27,8 @@ class DemoSeeder extends Seeder
         $this->disableForeignKeyChecks();
 
         try {
-            // 1. TODOS LOS USUARIOS DE PRUEBA
-            echo "👥 PASO 1/9: Usuarios de prueba (4 usuarios)\n";
+            // 1. TODOS LOS USUARIOS DE PRUEBA (6 roles)
+            echo "👥 PASO 1/9: Usuarios de prueba (6 usuarios)\n";
             $this->seedUsers();
 
             // 2. Facultades (10)
@@ -141,21 +141,47 @@ class DemoSeeder extends Seeder
                 'role' => 'estudiante',
                 'email_verified_at' => now(),
             ],
+            [
+                'name' => 'Desarrollador Sistema',
+                'email' => 'developer@universidad.edu.ve',
+                'password' => $password,
+                'role' => 'desarrollador',
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Soporte Técnico',
+                'email' => 'soporte@universidad.edu.ve',
+                'password' => $password,
+                'role' => 'soporte',
+                'email_verified_at' => now(),
+            ],
         ];
 
         foreach ($users as $userData) {
-            User::create($userData);
+            // Usar updateOrCreate para evitar duplicados
+            User::updateOrCreate(
+                ['email' => $userData['email']],
+                $userData
+            );
         }
 
-        echo "   ✓ 4 usuarios creados (admin, profesor, estudiante, solicitante)\n";
+        echo "   ✓ 6 usuarios creados/actualizados (admin, profesor, estudiante, solicitante, developer, soporte)\n";
     }
 
     protected function seedProfesores(int $count): void
     {
+        // Si ya existen profesores, no crear más
+        $existingCount = DB::table('profesores')->count();
+        if ($existingCount >= $count) {
+            echo "   ℹ️  Ya existen {$existingCount} profesores, omitiendo creación\n";
+            return;
+        }
+
         $faker = \Faker\Factory::create('es_VE');
         $carreras = DB::table('carreras')->pluck('id')->toArray();
+        $toCreate = $count - $existingCount;
 
-        for ($i = 0; $i < $count; $i++) {
+        for ($i = 0; $i < $toCreate; $i++) {
             DB::table('profesores')->insert([
                 'nombres' => $faker->firstName(),
                 'apellidos' => $faker->lastName() . ' ' . $faker->lastName(),
@@ -164,7 +190,7 @@ class DemoSeeder extends Seeder
                 'telefono' => $faker->phoneNumber(),
                 'fecha_nacimiento' => $faker->dateTimeBetween('-60 years', '-25 years'),
                 'genero' => $faker->randomElement(['M', 'F']),
-                'codigo_empleado' => 'PROF-' . str_pad($i + 5001, 6, '0', STR_PAD_LEFT),
+                'codigo_empleado' => 'PROF-' . str_pad($existingCount + $i + 5001, 6, '0', STR_PAD_LEFT),
                 'fecha_contratacion' => $faker->dateTimeBetween('-10 years', '-1 year'),
                 'tipo_contrato' => $faker->randomElement(['tiempo_completo', 'medio_tiempo']),
                 'categoria' => $faker->randomElement(['instructor', 'asistente', 'agregado', 'asociado']),
@@ -177,16 +203,25 @@ class DemoSeeder extends Seeder
             ]);
         }
 
-        echo "   ✓ {$count} profesores creados\n";
+        $finalCount = DB::table('profesores')->count();
+        echo "   ✓ {$finalCount} profesores en total ({$toCreate} nuevos)\n";
     }
 
     protected function seedAulas(int $count): void
     {
+        // Si ya existen aulas, no crear más
+        $existingCount = DB::table('aulas')->count();
+        if ($existingCount >= $count) {
+            echo "   ℹ️  Ya existen {$existingCount} aulas, omitiendo creación\n";
+            return;
+        }
+
         $faker = \Faker\Factory::create('es_VE');
         $edificios = ['A', 'B', 'C', 'D'];
         $tipos = ['aula_regular', 'laboratorio', 'auditorio'];
+        $toCreate = $count - $existingCount;
 
-        for ($i = 0; $i < $count; $i++) {
+        for ($i = $existingCount; $i < $count; $i++) {
             DB::table('aulas')->insert([
                 'codigo' => $faker->randomElement($edificios) . '-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
                 'nombre' => 'Aula ' . ($i + 1),
@@ -203,15 +238,24 @@ class DemoSeeder extends Seeder
             ]);
         }
 
-        echo "   ✓ {$count} aulas creadas\n";
+        $finalCount = DB::table('aulas')->count();
+        echo "   ✓ {$finalCount} aulas en total ({$toCreate} nuevas)\n";
     }
 
     protected function seedEstudiantes(int $count): void
     {
+        // Si ya existen estudiantes, no crear más
+        $existingCount = DB::table('estudiantes')->count();
+        if ($existingCount >= $count) {
+            echo "   ℹ️  Ya existen {$existingCount} estudiantes, omitiendo creación\n";
+            return;
+        }
+
         $faker = \Faker\Factory::create('es_VE');
         $carreras = DB::table('carreras')->pluck('id')->toArray();
+        $toCreate = $count - $existingCount;
 
-        for ($i = 0; $i < $count; $i++) {
+        for ($i = 0; $i < $toCreate; $i++) {
             DB::table('estudiantes')->insert([
                 'nombres' => $faker->firstName(),
                 'apellidos' => $faker->lastName() . ' ' . $faker->lastName(),
@@ -231,18 +275,32 @@ class DemoSeeder extends Seeder
             ]);
         }
 
-        echo "   ✓ {$count} estudiantes creados\n";
+        $finalCount = DB::table('estudiantes')->count();
+        echo "   ✓ {$finalCount} estudiantes en total ({$toCreate} nuevos)\n";
     }
 
     protected function seedHorarios(int $count): void
     {
+        // Si ya existen horarios, no crear más
+        $existingCount = DB::table('horarios')->count();
+        if ($existingCount >= $count) {
+            echo "   ℹ️  Ya existen {$existingCount} horarios, omitiendo creación\n";
+            return;
+        }
+
         $faker = \Faker\Factory::create('es_VE');
         $materias = DB::table('materias')->pluck('id')->toArray();
         $profesores = DB::table('profesores')->pluck('id')->toArray();
         $aulas = DB::table('aulas')->pluck('id')->toArray();
         $dias = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes'];
+        $toCreate = $count - $existingCount;
 
-        for ($i = 0; $i < $count; $i++) {
+        if (empty($materias) || empty($profesores) || empty($aulas)) {
+            echo "   ⚠️  Faltan datos previos (materias/profesores/aulas), omitiendo horarios\n";
+            return;
+        }
+
+        for ($i = 0; $i < $toCreate; $i++) {
             DB::table('horarios')->insert([
                 'materia_id' => $faker->randomElement($materias),
                 'profesor_id' => $faker->randomElement($profesores),
@@ -262,20 +320,33 @@ class DemoSeeder extends Seeder
             ]);
         }
 
-        echo "   ✓ {$count} horarios creados\n";
+        $finalCount = DB::table('horarios')->count();
+        echo "   ✓ {$finalCount} horarios en total ({$toCreate} nuevos)\n";
     }
 
     protected function seedInscripciones(): void
     {
+        $existingCount = DB::table('inscripciones')->count();
+        if ($existingCount > 0) {
+            echo "   ℹ️  Ya existen {$existingCount} inscripciones, omitiendo creación\n";
+            return;
+        }
+
         $estudiantes = DB::table('estudiantes')->pluck('id')->toArray();
         $horarios = DB::table('horarios')->pluck('id')->toArray();
+        
+        if (empty($estudiantes) || empty($horarios)) {
+            echo "   ⚠️  No hay estudiantes u horarios, omitiendo inscripciones\n";
+            return;
+        }
+
         $count = 0;
 
         foreach ($estudiantes as $estudianteId) {
             // Cada estudiante se inscribe en 5 materias
             $horariosAleatorios = array_rand(array_flip($horarios), min(5, count($horarios)));
             
-            foreach ($horariosAleatorios as $horarioId) {
+            foreach ((array)$horariosAleatorios as $horarioId) {
                 DB::table('inscripciones')->insert([
                     'estudiante_id' => $estudianteId,
                     'horario_id' => $horarioId,
