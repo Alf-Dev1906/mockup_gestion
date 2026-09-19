@@ -35,8 +35,7 @@ try {
         case 'seed':
             $allowedSeeders = [
                 'UserSeeder',
-                'DemoSeeder',
-                'DemoLightSeeder',  // Nueva versión ligera
+                'DemoSeeder',  // Ya está optimizado: 60 estudiantes, 50 profesores
                 'LinkDemoUsersSeeder',
                 'SolicitudesYPagosSeeder',
                 'PagosMockupSeeder',

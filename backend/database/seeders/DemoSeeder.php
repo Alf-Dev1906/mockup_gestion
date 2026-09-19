@@ -31,37 +31,36 @@ class DemoSeeder extends Seeder
             echo "👥 PASO 1/9: Usuarios de prueba (6 usuarios)\n";
             $this->seedUsers();
 
-            // 2. Facultades (10)
-            echo "📁 PASO 2/9: Facultades\n";
-            $this->call(FacultadSeeder::class);
+            // 2. Facultades (solo 3)
+            echo "📁 PASO 2/9: Facultades (3)\n";
+            $this->seedFacultades();
 
-            // 3. Carreras (40)
-            echo "📚 PASO 3/9: Carreras\n";
-            $this->call(CarreraSeeder::class);
-            $this->call(NuevasCarrerasSeeder::class);
+            // 3. Carreras (solo 6: 2 por facultad)
+            echo "📚 PASO 3/9: Carreras (6)\n";
+            $this->seedCarreras();
 
-            // 4. Profesores (50 en lugar de 5000)
-            echo "👨‍🏫 PASO 4/9: Profesores (50)\n";
-            $this->seedProfesores(50);
+            // 4. Profesores (20 en lugar de 50)
+            echo "👨‍🏫 PASO 4/9: Profesores (20)\n";
+            $this->seedProfesores(20);
 
-            // 5. Aulas (30 en lugar de 800)
-            echo "🏫 PASO 5/9: Aulas (30)\n";
-            $this->seedAulas(30);
+            // 5. Aulas (15 en lugar de 30)
+            echo "🏫 PASO 5/9: Aulas (15)\n";
+            $this->seedAulas(15);
 
-            // 6. Materias (completas ~2000)
-            echo "📖 PASO 6/9: Materias\n";
-            $this->call(MateriaSeeder::class);
+            // 6. Materias (30: 5 por carrera)
+            echo "📖 PASO 6/9: Materias (30)\n";
+            $this->seedMaterias();
 
-            // 7. Estudiantes (60 en lugar de 96000)
-            echo "👨‍🎓 PASO 7/9: Estudiantes (60)\n";
-            $this->seedEstudiantes(60);
+            // 7. Estudiantes (30 en lugar de 60)
+            echo "👨‍🎓 PASO 7/9: Estudiantes (30)\n";
+            $this->seedEstudiantes(30);
 
-            // 8. Horarios (50 en lugar de 15000)
-            echo "🕐 PASO 8/9: Horarios (50)\n";
-            $this->seedHorarios(50);
+            // 8. Horarios (20 en lugar de 50)
+            echo "🕐 PASO 8/9: Horarios (20)\n";
+            $this->seedHorarios(20);
 
-            // 9. Inscripciones (~300 en lugar de 138000)
-            echo "📝 PASO 9/9: Inscripciones\n";
+            // 9. Inscripciones (~100 en lugar de 300)
+            echo "📝 PASO 9/9: Inscripciones (100)\n";
             $this->seedInscripciones();
 
         } finally {
@@ -224,12 +223,19 @@ class DemoSeeder extends Seeder
         }
 
         $faker = \Faker\Factory::create('es_VE');
+        $facultades = DB::table('facultades')->pluck('id')->toArray();
         $edificios = ['A', 'B', 'C', 'D'];
         $tipos = ['aula_regular', 'laboratorio', 'auditorio'];
         $toCreate = $count - $existingCount;
 
+        if (empty($facultades)) {
+            echo "   ⚠️  No hay facultades, omitiendo aulas\n";
+            return;
+        }
+
         for ($i = $existingCount; $i < $count; $i++) {
             DB::table('aulas')->insert([
+                'facultad_id' => $faker->randomElement($facultades),
                 'codigo' => $faker->randomElement($edificios) . '-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
                 'nombre' => 'Aula ' . ($i + 1),
                 'edificio' => $faker->randomElement($edificios),
@@ -238,7 +244,6 @@ class DemoSeeder extends Seeder
                 'tipo' => $faker->randomElement($tipos),
                 'tiene_proyector' => $faker->boolean(70),
                 'tiene_aire_acondicionado' => $faker->boolean(80),
-                'tiene_pizarra_digital' => $faker->boolean(30),
                 'estatus' => 'disponible',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -336,6 +341,160 @@ class DemoSeeder extends Seeder
 
         $finalCount = DB::table('horarios')->count();
         echo "   ✓ {$finalCount} horarios en total ({$toCreate} nuevos)\n";
+    }
+
+    protected function seedFacultades(): void
+    {
+        $existingCount = DB::table('facultades')->count();
+        if ($existingCount >= 3) {
+            echo "   ℹ️  Ya existen {$existingCount} facultades, omitiendo creación\n";
+            return;
+        }
+
+        $facultades = [
+            ['nombre' => 'Facultad de Ingeniería', 'codigo' => 'ING', 'descripcion' => 'Ingeniería y Tecnología'],
+            ['nombre' => 'Facultad de Ciencias', 'codigo' => 'CIE', 'descripcion' => 'Ciencias Básicas y Aplicadas'],
+            ['nombre' => 'Facultad de Humanidades', 'codigo' => 'HUM', 'descripcion' => 'Humanidades y Educación'],
+        ];
+
+        foreach ($facultades as $fac) {
+            DB::table('facultades')->insert(array_merge($fac, [
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]));
+        }
+
+        echo "   ✓ 3 facultades creadas\n";
+    }
+
+    protected function seedCarreras(): void
+    {
+        $existingCount = DB::table('carreras')->count();
+        if ($existingCount >= 6) {
+            echo "   ℹ️  Ya existen {$existingCount} carreras, omitiendo creación\n";
+            return;
+        }
+
+        $facultades = DB::table('facultades')->pluck('id', 'codigo')->toArray();
+
+        if (empty($facultades)) {
+            echo "   ⚠️  No hay facultades, omitiendo carreras\n";
+            return;
+        }
+
+        $carreras = [
+            [
+                'facultad_id' => $facultades['ING'] ?? null,
+                'nombre' => 'Ingeniería en Sistemas',
+                'codigo' => 'ING-SIS',
+                'titulo_otorgado' => 'Ingeniero en Sistemas',
+                'duracion_semestres' => 10,
+                'creditos_totales' => 220,
+                'modalidad' => 'presencial',
+                'activo' => true,
+            ],
+            [
+                'facultad_id' => $facultades['ING'] ?? null,
+                'nombre' => 'Ingeniería Civil',
+                'codigo' => 'ING-CIV',
+                'titulo_otorgado' => 'Ingeniero Civil',
+                'duracion_semestres' => 10,
+                'creditos_totales' => 230,
+                'modalidad' => 'presencial',
+                'activo' => true,
+            ],
+            [
+                'facultad_id' => $facultades['CIE'] ?? null,
+                'nombre' => 'Licenciatura en Matemáticas',
+                'codigo' => 'LIC-MAT',
+                'titulo_otorgado' => 'Licenciado en Matemáticas',
+                'duracion_semestres' => 8,
+                'creditos_totales' => 180,
+                'modalidad' => 'presencial',
+                'activo' => true,
+            ],
+            [
+                'facultad_id' => $facultades['CIE'] ?? null,
+                'nombre' => 'Licenciatura en Física',
+                'codigo' => 'LIC-FIS',
+                'titulo_otorgado' => 'Licenciado en Física',
+                'duracion_semestres' => 8,
+                'creditos_totales' => 180,
+                'modalidad' => 'presencial',
+                'activo' => true,
+            ],
+            [
+                'facultad_id' => $facultades['HUM'] ?? null,
+                'nombre' => 'Licenciatura en Educación',
+                'codigo' => 'LIC-EDU',
+                'titulo_otorgado' => 'Licenciado en Educación',
+                'duracion_semestres' => 8,
+                'creditos_totales' => 160,
+                'modalidad' => 'presencial',
+                'activo' => true,
+            ],
+            [
+                'facultad_id' => $facultades['HUM'] ?? null,
+                'nombre' => 'Licenciatura en Historia',
+                'codigo' => 'LIC-HIS',
+                'titulo_otorgado' => 'Licenciado en Historia',
+                'duracion_semestres' => 8,
+                'creditos_totales' => 160,
+                'modalidad' => 'presencial',
+                'activo' => true,
+            ],
+        ];
+
+        foreach ($carreras as $carrera) {
+            if ($carrera['facultad_id']) {
+                DB::table('carreras')->insert(array_merge($carrera, [
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]));
+            }
+        }
+
+        echo "   ✓ 6 carreras creadas\n";
+    }
+
+    protected function seedMaterias(): void
+    {
+        $existingCount = DB::table('materias')->count();
+        if ($existingCount >= 30) {
+            echo "   ℹ️  Ya existen {$existingCount} materias, omitiendo creación\n";
+            return;
+        }
+
+        $carreras = DB::table('carreras')->pluck('id')->toArray();
+
+        if (empty($carreras)) {
+            echo "   ⚠️  No hay carreras, omitiendo materias\n";
+            return;
+        }
+
+        $count = 0;
+        foreach ($carreras as $carreraId) {
+            // 5 materias por carrera
+            for ($i = 1; $i <= 5; $i++) {
+                DB::table('materias')->insert([
+                    'carrera_id' => $carreraId,
+                    'nombre' => "Materia {$i} - Carrera {$carreraId}",
+                    'codigo' => "MAT-{$carreraId}-" . str_pad($i, 2, '0', STR_PAD_LEFT),
+                    'creditos' => rand(3, 5),
+                    'horas_teoricas' => rand(2, 4),
+                    'horas_practicas' => rand(0, 2),
+                    'horas_laboratorio' => 0,
+                    'semestre_recomendado' => $i,
+                    'tipo' => 'obligatoria',
+                    'activo' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $count++;
+            }
+        }
+
+        echo "   ✓ {$count} materias creadas\n";
     }
 
     protected function seedInscripciones(): void
